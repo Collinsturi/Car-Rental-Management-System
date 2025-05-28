@@ -157,3 +157,13 @@ export const InsuranceRelations = relations(InsuranceTable, ({ one }) => ({
         references: [CarTable.carID]
     })
 }));
+
+
+export type CustomerEntity = typeof CustomerTable.$inferSelect;
+export type LocationEntity = typeof LocationTable.$inferSelect;
+export type CarEntity = typeof CarTable.$inferSelect;
+export type ReservationEntity = typeof ReservationTable.$inferSelect;
+export type BookingEntity = typeof BookingsTable.$inferSelect;
+export type PaymentEntity = typeof PaymentTable.$inferSelect;
+export type MaintenanceEntity = typeof MaintenanceTable.$inferSelect;
+export type InsuranceEntity = typeof InsuranceTable.$inferSelect;

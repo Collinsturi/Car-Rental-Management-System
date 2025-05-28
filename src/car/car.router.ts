@@ -1,6 +1,16 @@
 import { Express } from 'express';
 
 const cars = (app: Express) => {
+
+    //Create a car
+    app.route('/cars').post(
+        (req, res) => {
+            const carData = req.body;
+            // Logic to create a new car
+            res.status(201).send(`Car created with data: ${JSON.stringify(carData)}`);
+        }
+    );
+
     //Get car by card Id
     app.route('/cars/:carId').get(
         (req, res) => {
