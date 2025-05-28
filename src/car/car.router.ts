@@ -5,7 +5,7 @@ import {
     getCarsByLocation,
     createCarController,
     getCarByIdController
-} from './car.controller'; // Adjust the path as needed
+} from './car.controller';
 
 const cars = (app: Express) => {
     // Create a car

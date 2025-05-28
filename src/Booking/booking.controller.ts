@@ -1,60 +1,72 @@
 import { Request, Response } from "express";
+import {
+    createBookingService,
+    getAllBookingsService,
+    getBookingByIdService,
+    getBookingsByCarIdService,
+    getBookingsByCustomerIdService
+} from "./booking.service";
 
-
-//Create booking
-export const createBookingController = async(req: Request, res: Response) => {
+// Create booking
+export const createBookingController = async (req: Request, res: Response) => {
     try {
         const bookingData = req.body;
-        // Logic to create a booking
-        res.status(201).send(`Booking created with data: ${JSON.stringify(bookingData)}`);
-    } catch (error) {
-        console.error("Error creating booking:", error);
-        res.status(500).send("Internal Server Error");
+        const booking = await createBookingService(bookingData);
+        res.status(201).json({
+            message: "Booking created successfully",
+            data: booking,
+        });
+    } catch (error: any) {
+        res.status(500).json({
+            error: "Failed to create booking",
+            message: error.message,
+        });
     }
-}
+};
 
-//Get all bookings 
-export const getAllBookingsController = async(req: Request, res: Response) => {
-    try{
-
-
-    } catch (error) {
-        console.error("Error fetching bookings:", error);
-        res.status(500).send("Internal Server Error");
+// Get booking by booking ID
+export const getBookingByIdController = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.bookingId);
+        const booking = await getBookingByIdService(id);
+        if (!booking) {
+            res.status(404).json({ message: `Booking with ID ${id} not found.` });
+            return;
+        }
+        res.status(200).json({ message: `Booking details for ID: ${id}`, data: booking });
+    } catch (error: any) {
+        res.status(500).json({ error: "Failed to get booking", message: error.message });
     }
-}
-  
-//Get booking by customerId
-export const getBookingByCustomerIdController = async(req: Request, res: Response) => {
-    try{
-        const customerId = req.params.customerId;
-        // Logic to fetch booking by customerId
-        res.send(`Booking details for customer ID: ${customerId}`);
-    } catch (error) {
-        console.error("Error fetching booking by customer ID:", error);
-        res.status(500).send("Internal Server Error");
+};
+
+// Get bookings by card ID
+export const getBookingsByCarIdController = async (req: Request, res: Response) => {
+    try {
+        const cardId = Number(req.params.cardId);
+        const bookings = await getBookingsByCarIdService(cardId);
+        res.status(200).json({ message: `Bookings for card ID: ${cardId}`, data: bookings });
+    } catch (error: any) {
+        res.status(500).json({ error: "Failed to get bookings by card ID", message: error.message });
     }
-}
+};
 
-  
-//GetBooking by CardId
-export const getBookingByCardIdController = async(req: Request, res: Response) => {
-    try{
-
-    }catch (error) {
-
+// Get bookings by customer ID
+export const getBookingsByCustomerIdController = async (req: Request, res: Response) => {
+    try {
+        const customerId = Number(req.params.customerId);
+        const bookings = await getBookingsByCustomerIdService(customerId);
+        res.status(200).json({ message: `Bookings for customer ID: ${customerId}`, data: bookings });
+    } catch (error: any) {
+        res.status(500).json({ error: "Failed to get bookings by customer ID", message: error.message });
     }
-}
-  
-//GetBooking By BookingID
-export const getBookingByBookingIdController = async(req: Request, res: Response) => {
-    try{
-        const bookingId = req.params.bookingId;
-        // Logic to fetch booking by bookingId
-        res.send(`Booking details for ID: ${bookingId}`);
-    } catch (error) {
-        console.error("Error fetching booking by booking ID:", error);
-        res.status(500).send("Internal Server Error");
-    }
-}
+};
 
+// Get all bookings
+export const getAllBookingsController = async (_req: Request, res: Response) => {
+    try {
+        const bookings = await getAllBookingsService();
+        res.status(200).json({ message: "All bookings", data: bookings });
+    } catch (error: any) {
+        res.status(500).json({ error: "Failed to get all bookings", message: error.message });
+    }
+};
