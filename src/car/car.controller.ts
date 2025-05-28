@@ -1,37 +1,56 @@
-//Get car by id
-
 import { Request, Response } from 'express';
-
+import {createCarService, getAllAvailableCarsService, getCarByIdService, getCarsByCarModelService, getAllCarsInACertainLocationService} from "./car.service";
 
 //Create a car entry
-export const createCar = async(req: Request, res: Response) => {
-    try{
+export const createCarController = async(req: Request, res: Response) => {
+  try {
         const carData = req.body;
 
-        // Here you would typically call a service or repository to handle the business logic
-        // For example: await carService.createCar(carData);
+        const createdCar = await createCarService(carData);
 
-        // Simulating a successful creation response
-        res.status(201).json({ message: 'Car created successfully', data: carData });
+        if (!createdCar) {
+            res.status(400).json({
+                message: "Car was not created.",
+            });
+            return;
+        }
 
-    }catch(Error: any){
-        res.status(500).json({ error: 'Failed to create car', message: Error.message });
+        res.status(201).json({
+            message: 'Car created successfully',
+            data: createdCar,
+        });
+    } catch (error: any) {
+        res.status(500).json({
+            error: 'Failed to create car',
+            message: error.message,
+        });
     }
 };
 
 // Get car by ID
-export const getCarById = async(req: Request, res: Response) => {
-    try {
-        const carId = req.params.carId;
+export const getCarByIdController = async(req: Request, res: Response) => {
+   try {
+        const carId = Number(req.params.carId);
 
-        // Here you would typically call a service or repository to fetch the car by ID
-        // For example: const car = await carService.getCarById(carId);
+        const car = await getCarByIdService(carId);
 
-        // Simulating a successful response
-        res.status(200).json({ message: `Car details for ID: ${carId}` });
+        if (!car) {
+            res.status(404).json({
+                message: `Car with ID '${carId}' not found.`,
+            });
 
-    } catch (Error: any) {
-        res.status(500).json({ error: 'Failed to retrieve car', message: Error.message });
+            return;
+        }
+
+        res.status(200).json({
+            message: `Car details for ID: ${carId}`,
+            data: car,
+        });
+    } catch (error: any) {
+        res.status(500).json({
+            error: 'Failed to retrieve car',
+            message: error.message,
+        });
     }
 }
 
@@ -41,59 +60,69 @@ export const getCarByModel = async(req: Request, res: Response) => {
     try {
         const model = req.params.model;
 
-        // Here you would typically call a service or repository to fetch the car by model
-        // For example: const car = await carService.getCarByModel(model);
+        const cars = await getCarsByCarModelService(model);
 
-        // Simulating a successful response
-        res.status(200).json({ message: `Car details for model: ${model}` });
-
-    } catch (Error: any) {
-        res.status(500).json({ error: 'Failed to retrieve car', message: Error.message });
+        res.status(200).json({
+            message: `Cars with model: ${model}`,
+            data: cars,
+        });
+    } catch (error: any) {
+        res.status(500).json({
+            error: 'Failed to retrieve cars by model',
+            message: error.message,
+        });
     }
 }
 
-// Get car by year
-export const getCarByYear = async(req: Request, res: Response) => {
-    try {
-        const year = req.params.year;
+// // Get car by year
+// export const getCarByYear = async(req: Request, res: Response) => {
+//     try {
+//         const year = req.params.year;
 
-        // Here you would typically call a service or repository to fetch the car by year
-        // For example: const car = await carService.getCarByYear(year);
+//         // Here you would typically call a service or repository to fetch the car by year
+//         // For example: const car = await carService.getCarByYear(year);
 
-        // Simulating a successful response
-        res.status(200).json({ message: `Car details for year: ${year}` });
+//         // Simulating a successful response
+//         res.status(200).json({ message: `Car details for year: ${year}` });
 
-    } catch (Error: any) {
-        res.status(500).json({ error: 'Failed to retrieve car', message: Error.message });
-    }
-}
+//     } catch (Error: any) {
+//         res.status(500).json({ error: 'Failed to retrieve car', message: Error.message });
+//     }
+// }
 
 //Get all available cars
 export const getAllAvailableCars = async(req: Request, res: Response) => {
-    try {
-        // Here you would typically call a service or repository to fetch all available cars
-        // For example: const cars = await carService.getAllAvailableCars();
+   try {
+        const cars = await getAllAvailableCarsService();
 
-        // Simulating a successful response
-        res.status(200).json({ message: 'List of all available cars' });
-
-    } catch (Error: any) {
-        res.status(500).json({ error: 'Failed to retrieve available cars', message: Error.message });
+        res.status(200).json({
+            message: 'List of all available cars',
+            data: cars,
+        });
+    } catch (error: any) {
+        res.status(500).json({
+            error: 'Failed to retrieve available cars',
+            message: error.message,
+        });
     }
 }
 
 // Get all cars in a certain location
 export const getCarsByLocation = async(req: Request, res: Response) => {
-    try {
+   try {
         const location = req.params.location;
 
-        // Here you would typically call a service or repository to fetch cars by location
-        // For example: const cars = await carService.getCarsByLocation(location);
+        const cars = await getAllCarsInACertainLocationService(location);
 
-        // Simulating a successful response
-        res.status(200).json({ message: `List of all cars in location: ${location}` });
-
-    } catch (Error: any) {
-        res.status(500).json({ error: 'Failed to retrieve cars by location', message: Error.message });
+        res.status(200).json({
+            message: `List of all cars in location: ${location}`,
+            data: cars,
+        });
+    } catch (error: any) {
+        res.status(500).json({
+            error: 'Failed to retrieve cars by location',
+            message: error.message,
+        });
     }
 }
+
