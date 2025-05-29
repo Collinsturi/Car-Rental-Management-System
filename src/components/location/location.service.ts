@@ -1,5 +1,5 @@
-import db from "../Drizzle/db";
-import { LocationEntity, LocationTable } from "../Drizzle/schema";
+import db from "../../Drizzle/db";
+import { LocationEntity, LocationTable } from "../../Drizzle/schema";
 
 // Get all locations
 export const getAllLocationsService = async () => {

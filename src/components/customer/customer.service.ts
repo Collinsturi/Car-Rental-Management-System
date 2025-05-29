@@ -1,6 +1,6 @@
-import db from '../Drizzle/db';
+import db from '../../Drizzle/db';
 import { eq } from 'drizzle-orm';
-import { CustomerEntity, CustomerTable } from '../Drizzle/schema';
+import { CustomerEntity, CustomerTable } from '../../Drizzle/schema';
 
 // Create customer
 export const createCustomerService = async (customerData: any) => {

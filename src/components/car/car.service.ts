@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import db from "../Drizzle/db"
-import { CarTable, CarEntity, LocationTable } from "../Drizzle/schema"
+import db from "../../Drizzle/db"
+import { CarTable, CarEntity, LocationTable } from "../../Drizzle/schema"
 
 //Create a car 
 export const createCarService = async (carData: CarEntity) => {

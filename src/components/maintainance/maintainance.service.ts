@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import db from "../Drizzle/db";
-import { MaintenanceEntity, MaintenanceTable } from "../Drizzle/schema";
+import db from "../../Drizzle/db";
+import { MaintenanceEntity, MaintenanceTable } from "../../Drizzle/schema";
 import maintenance from "./maintainance.router";
 
 export const createMaintenanceService = async (maintenance: MaintenanceEntity) => {

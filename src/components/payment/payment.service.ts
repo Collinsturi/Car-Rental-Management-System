@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import db from "../Drizzle/db";
-import { PaymentEntity, PaymentTable } from "../Drizzle/schema";
+import db from "../../Drizzle/db";
+import { PaymentEntity, PaymentTable } from "../../Drizzle/schema";
 
 
 export const createPaymentService = async(payment: PaymentEntity) => {

@@ -1,13 +1,13 @@
 import express from 'express';
-import carRouter from './car/car.router'
-import locationRouter from './location/location.router';
-import customerRoute from './customer/customer.route'
-import reservationRoute from "./reservation/reservation.router"
-import bookingRoute from './Booking/booking.router';
-import paymentRouter from './payment/payment.router';
-import maintenanceRouter from './maintainance/maintainance.router';
-import insuranceRoute from './Insurance/insurance.router';
-import { sendEmail } from './mailer/mailer';
+import carRouter from './components/car/car.router'
+import locationRouter from './components/location/location.router';
+import customerRoute from './components/customer/customer.route'
+import bookingRoute from './components/Booking/booking.router';
+import paymentRouter from './components/payment/payment.router';
+import maintenanceRouter from './components/maintainance/maintainance.router';
+import { sendEmail } from './communication/mailer';
+import reservationRoute from './components/reservation/reservation.router';
+import insuranceRoute from './components/Insurance/insurance.router';
 
 const app = express();
 app.use(express.json());

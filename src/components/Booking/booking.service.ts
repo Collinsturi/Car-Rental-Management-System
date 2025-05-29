@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import db from "../Drizzle/db";
-import { BookingsTable, BookingEntity } from "../Drizzle/schema";
+import db from "../../Drizzle/db";
+import { BookingsTable, BookingEntity } from "../../Drizzle/schema";
 
 // Create booking
 export const createBookingService = async (bookingData: BookingEntity) => {
