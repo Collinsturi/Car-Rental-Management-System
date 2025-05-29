@@ -10,7 +10,7 @@ import {
   lte,
   lt,
 } from "drizzle-orm";
-import { ReservationEntity, ReservationTable } from "../Drizzle/schema";
+import { CustomerTable, ReservationEntity, ReservationTable } from "../Drizzle/schema";
 import reservation from "./reservation.router";
 
 // Get reservation by customer ID
@@ -57,12 +57,27 @@ export const getCurrentlyReservedCarsService = async () => {
 };
 
 // Get currently reserved cars by customer
-export const getCurrentlyReservedCarsByCustomerService = async (customerId: number) => {
-    return await db.query.ReservationTable.findMany({
-        where: and(
-            eq(ReservationTable.customerID, customerId)
-        ),
-    });
+export const getCurrentlyReservedCarsByCustomerService = async (customerName: string) => {
+  // Get the customer record
+  const customer = await db.query.CustomerTable.findFirst({
+    where: eq(CustomerTable.firstName, customerName),
+  });
+
+  console.log(customer)
+  if (!customer) {
+    throw new Error("Customer not found");
+  }
+
+
+  // Find currently reserved cars for the customer
+  return await db.query.ReservationTable.findMany({
+    where: and(
+      eq(ReservationTable.customerID, customer.customerID),
+      // or(
+      //   isNull(ReservationTable.returnDate), // Not returned yet
+      // )
+    ),
+  });
 };
 
 

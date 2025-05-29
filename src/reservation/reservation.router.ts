@@ -8,13 +8,13 @@ import {
     getCurrentlyReservedCarsByCustomerController
 } from "./reservation.controller";
 
-const reservation = (app: Express) => {
+const reservationRoute = (app: Express) => {
     app.route("/reservation").post(createReservationController);
     app.route("/reservation/customer/:customerId").get(getReservationByCustomerIdController);
     app.route("/reservation/car/:carId").get(getReservationByCarIdController);
     app.route("/reservation/returned").get(getReturnedCarsController);
     app.route("/reservation/current").get(getCurrentlyReservedCarsController);
-    app.route("/reservation/customer/:customerId/current").get(getCurrentlyReservedCarsByCustomerController);
+    app.route("/reservation/customer/:customerName/current").get(getCurrentlyReservedCarsByCustomerController);
 };
 
-export default reservation;
+export default reservationRoute;
