@@ -23,6 +23,7 @@ export const UsersTable = pgTable("users", {
     password: varchar("password", { length: 255 }).notNull(), 
     role: RoleEnum("role").default("user"),
     createdAt: date("created_at").defaultNow(),
+    
 });
 
 // customer table
