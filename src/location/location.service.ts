@@ -3,11 +3,28 @@ import { LocationEntity, LocationTable } from "../Drizzle/schema";
 
 // Get all locations
 export const getAllLocationsService = async () => {
-    return await db.query.LocationTable.findMany();
+    try{
+        const locations = await db.query.LocationTable.findMany();
+
+        if(locations) return locations;
+    
+        throw new Error("There was a db error in fetching locations.")
+    }catch(error: any){
+        console.log()
+    }
 };
 
 export const createLocationService = async (location: LocationEntity) => {
-    return await db.insert(LocationTable)
-        .values(location)
-        .returning()
+    try{
+        const createdLocation = await db.insert(LocationTable)
+                .values(location)
+                .returning()
+
+        if(createdLocation) return createdLocation;
+
+        throw new Error("There was an error in creating a location.")
+    }catch(error: any){
+        console.log(error)
+        return [];
+    }
 }

@@ -3,8 +3,18 @@ import { getAllLocationsService, createLocationService } from "./location.servic
 
 // Controller to handle fetching all locations
 export const getAllLocationsController = async (_req: Request, res: Response) => {
-    const data = await getAllLocationsService();
-    res.status(200).json({ message: "List of all locations", data });
+    try{
+        const data = await getAllLocationsService();
+        res.status(200).json({ message: "List of all locations", data });
+    }catch(error: any){
+        console.log(error);
+        res.status(500)
+        .json(
+            {
+                message: "There was an error in getting all the available locations."
+            }
+        )
+    }
 };
 
 export const createLocationController = async (req: Request, res: Response) => {

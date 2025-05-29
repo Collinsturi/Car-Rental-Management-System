@@ -12,7 +12,7 @@ const carRouter = (app: Express) => {
     app.route('/cars').post(createCarController);
 
     // Get car by car ID
-    app.route('/cars/:carId').get(getCarByIdController);
+    app.route('/cars/find/:carId').get(getCarByIdController);
 
     // Get car by model
     app.route('/cars/model/:model').get(getCarByModel);

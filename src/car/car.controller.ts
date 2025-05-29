@@ -8,7 +8,7 @@ export const createCarController = async(req: Request, res: Response) => {
 
         const createdCar = await createCarService(carData);
 
-        if (!createdCar) {
+        if (Array.isArray(createdCar) && createdCar.length > 0) {
             res.status(400).json({
                 message: "Car was not created.",
             });
@@ -34,7 +34,7 @@ export const getCarByIdController = async(req: Request, res: Response) => {
 
         const car = await getCarByIdService(carId);
 
-        if (!car) {
+        if (Array.isArray(car) && car.length > 0) {
             res.status(404).json({
                 message: `Car with ID '${carId}' not found.`,
             });
@@ -62,10 +62,22 @@ export const getCarByModel = async(req: Request, res: Response) => {
 
         const cars = await getCarsByCarModelService(model);
 
-        res.status(200).json({
-            message: `Cars with model: ${model}`,
-            data: cars,
-        });
+        if(Array.isArray(cars) && cars.length > 0)
+        {
+            res.status(200).json({
+                message: `Cars with model: ${model}`,
+                data: cars,
+            });
+            return;
+        }
+
+        res.status(404)
+            .json(
+                {
+                    message: `There was no cars with model: ${model}`
+                }
+            )
+
     } catch (error: any) {
         res.status(500).json({
             error: 'Failed to retrieve cars by model',
@@ -95,10 +107,21 @@ export const getAllAvailableCars = async(req: Request, res: Response) => {
    try {
         const cars = await getAllAvailableCarsService();
 
-        res.status(200).json({
-            message: 'List of all available cars',
-            data: cars,
-        });
+        if(Array.isArray(cars) && cars.length > 0){
+            res.status(200).json({
+                message: 'List of all available cars',
+                data: cars,
+            });
+            return;
+        }
+        
+        res.status(200)
+            .json(
+                {
+                    message: `No cars are available.`
+                }
+            )
+
     } catch (error: any) {
         res.status(500).json({
             error: 'Failed to retrieve available cars',
@@ -114,10 +137,19 @@ export const getCarsByLocation = async(req: Request, res: Response) => {
 
         const cars = await getAllCarsInACertainLocationService(location);
 
-        res.status(200).json({
-            message: `List of all cars in location: ${location}`,
-            data: cars,
-        });
+        if(Array.isArray(cars) && cars.length > 0){
+            res.status(200).json({
+                message: `List of all cars in location: ${location}`,
+                data: cars,
+            });
+            return;
+        }
+
+        res.status(200).json(
+            {
+                message: `There are no cars that exist in location ${location}`
+            }
+        )
     } catch (error: any) {
         res.status(500).json({
             error: 'Failed to retrieve cars by location',

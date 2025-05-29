@@ -13,7 +13,8 @@ export const createCarService = async (carData: CarEntity) => {
 
         throw new Error("There was an error with the database in creating the car");
     } catch (error: any) {
-        throw new Error(`Failed to create car: ${error.message}`);
+        console.log(error);
+        return [];
     }
 }
 
@@ -30,7 +31,8 @@ export const getCarByIdService = async (id: number) => {
 
         throw new Error("There was an error with the retrieval of car by id '"+ id +"'.")        
     }catch(Error: any){
-        return null;
+        console.log(Error)
+        return [];
     }
 }
 
@@ -46,10 +48,11 @@ export const getCarsByCarModelService = async (model: string) => {
         if (cars && cars.length > 0) {
             return cars;
         }
-        return [];
 
+        throw new Error(`Error getting cars by model: ${model}`);
     }catch(error: any){
-        throw new Error(`Error getting cars by model: ${error.message}`);
+        console.log(error)
+        return[]
     }
 }
 
@@ -80,9 +83,12 @@ export const getAllAvailableCarsService = async () => {
             where: eq(CarTable.availability, true)
         });
 
-        return cars || [];
+        if(cars) return cars;
+
+        throw new Error(`Error getting available cars`);
     } catch (error: any) {
-        throw new Error(`Error getting available cars: ${error.message}`);
+        console.log(error);
+        return[]
     }
 }
 
@@ -91,22 +97,26 @@ export const getAllAvailableCarsService = async () => {
 //Get all cars in a certain location
 export const getAllCarsInACertainLocationService = async (locationName: string) => {
     try {
-        // Step 1: Get location ID by name
+        // Get location ID by name
         const location = await db.query.LocationTable.findFirst({
             where: eq(LocationTable.locationName, locationName),
         });
 
-        if (!location) {
-            throw new Error(`Location '${locationName}' not found`);
+        if (location) {
+            // Get cars by location ID
+            const cars = await db.query.CarTable.findMany({
+                where: eq(CarTable.locationID, location.locationID),
+            });
+
+            if(cars)  return cars;
+
+            throw new Error(`Error getting cars in location '${locationName}'`);
         }
 
-        // Step 2: Get cars by location ID
-        const cars = await db.query.CarTable.findMany({
-            where: eq(CarTable.locationID, location.locationID),
-        });
+        throw new Error(`Location '${locationName}' not found`);
 
-        return cars || [];
     } catch (error: any) {
-        throw new Error(`Error getting cars in location '${locationName}': ${error.message}`);
+        console.log(error);
+        return[];
     }
 }
