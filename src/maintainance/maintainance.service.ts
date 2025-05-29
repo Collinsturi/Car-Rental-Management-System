@@ -1,6 +1,13 @@
 import { eq } from "drizzle-orm";
 import db from "../Drizzle/db";
-import { MaintenanceTable } from "../Drizzle/schema";
+import { MaintenanceEntity, MaintenanceTable } from "../Drizzle/schema";
+import maintenance from "./maintainance.router";
+
+export const createMaintenanceService = async (maintenance: MaintenanceEntity) => {
+    return db.insert(MaintenanceTable)
+    .values(maintenance)
+    .returning()
+}
 
 // Get maintenance by maintenanceId
 export const getMaintenanceByIdService = async (maintenanceId: number) => {

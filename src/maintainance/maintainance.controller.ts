@@ -1,8 +1,33 @@
 import { Request, Response } from "express";
 import {
     getMaintenanceByIdService,
-    getMaintenanceByCarIdService
+    getMaintenanceByCarIdService,
+    createMaintenanceService
 } from "./maintainance.service";
+
+export const createMaintenanceController = async (req: Request, res: Response) => {
+    try{
+        const maintainance = await createMaintenanceService(req.body);
+
+        if(maintainance){
+            res.status(200)
+            .json({
+                message: "Maintainance created",
+                payload: maintainance
+            })
+        }
+
+        res.status(500)
+        .json({
+            message: "There was an error creating a maintainance entry."
+        })
+    }catch(error: any){
+         res.status(500)
+        .json({
+            message: "There was an error creating a maintainance entry."
+        })
+    }
+}
 
 // Get maintenance by maintenanceId
 export const getMaintenanceByIdController = async (req: Request, res: Response) => {

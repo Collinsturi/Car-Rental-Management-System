@@ -29,6 +29,8 @@ export const getBookingByIdService = async (bookingId: number) => {
 // Get booking by card ID
 export const getBookingsByCarIdService = async (carId: number) => {
     try {
+        console.log(carId)
+
         const bookings = await db.query.BookingsTable.findMany({
             where: eq(BookingsTable.carID, carId),
         });

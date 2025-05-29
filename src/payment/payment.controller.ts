@@ -2,7 +2,35 @@ import { Request, Response } from "express";
 import {
     getPaymentByIdService,
     getPaymentByBookingIdService,
+    createPaymentService,
 } from "./payment.service";
+
+
+export const createPaymentcontroller = async(req: Request, res: Response) =>{
+    try{
+        const insertedData = await createPaymentService(req.body);
+
+        if(insertedData){
+            res.status(201)
+            .json({
+                message: "Payment created successfully.",
+                payload: insertedData
+            })
+
+            return;
+        }
+
+        res.status(500)
+        .json({
+            message: "There was an error with inserting your data. Please try again later."
+        })
+    }catch(error: any){
+         res.status(500)
+        .json({
+            message: "There was an error with inserting your data. Please try again later."
+        })
+    }
+}
 
 // Get payment by paymentId
 export const getPaymentByIdController = async (req: Request, res: Response) => {
