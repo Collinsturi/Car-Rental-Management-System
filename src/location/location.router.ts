@@ -1,13 +1,10 @@
-import { Express } from 'express';
+import { Express } from "express";
+import { getAllLocationsController, createLocationController } from "./location.controller";
 
-const location = (app: Express) => {
-    // Get all locations
-    app.route('/location').get(
-        (req, res) => {
-            // Logic to get all locations
-            res.send('List of all locations');
-        }
-    );
 
-}
+const locationRouter = (app: Express) => {
+    app.route("/location").post(createLocationController);
+    app.route("/location").get(getAllLocationsController);
+};
 
+export default locationRouter;

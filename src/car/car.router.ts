@@ -7,7 +7,7 @@ import {
     getCarByIdController
 } from './car.controller';
 
-const cars = (app: Express) => {
+const carRouter = (app: Express) => {
     // Create a car
     app.route('/cars').post(createCarController);
 
@@ -24,4 +24,4 @@ const cars = (app: Express) => {
     app.route('/cars/location/:location').get(getCarsByLocation);
 };
 
-export default cars;
+export default carRouter;
