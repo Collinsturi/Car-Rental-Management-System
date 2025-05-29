@@ -1,5 +1,5 @@
 import {Express} from "express";
-import { createCustomerController, getCustomerByEmailController, getCustomerByIdController } from "./customer.controller";
+import { createCustomerController, deleteCustomerController, getCustomerByEmailController, getCustomerByIdController, updateCustomerController } from "./customer.controller";
 
 
 const customerRoute = (app: Express) => {
@@ -11,6 +11,9 @@ const customerRoute = (app: Express) => {
 
     // Get customer by ID
     app.route('/customer/:customerId').get(getCustomerByIdController);
+
+    app.route("/customer").patch(updateCustomerController);
+    app.route("/customer/:id").delete(deleteCustomerController);
 }
 
 export default customerRoute;

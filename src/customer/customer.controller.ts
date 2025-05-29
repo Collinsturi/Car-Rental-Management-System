@@ -1,5 +1,5 @@
 import {Request, Response} from "express"
-import { createCustomerService, getCustomerByEmailService, getCustomerByIdService } from "./customer.service";
+import { createCustomerService, deleteCustomerService, getCustomerByEmailService, getCustomerByIdService, updateCustomerService } from "./customer.service";
 
 // Create customer
 export const createCustomerController = async (req: Request, res: Response) => {
@@ -41,3 +41,53 @@ export const getCustomerByIdController = async (req: Request, res: Response) => 
     res.status(500).json({ message: 'Error retrieving customer', error });
   }
 };
+
+export const updateCustomerController = async (req: Request, res: Response) => {
+  try{
+    const updatedCustomer = await updateCustomerService(req.body)
+
+    if(updatedCustomer){
+      res.status(200)
+      .json({
+        message: "Updated successfully.",
+        data: updatedCustomer
+      })
+
+      return;
+    }
+
+    res.status(500)
+    .json({
+      message: "There was an error in updating the database entry."
+    })
+  }catch(error: any){
+     res.status(500)
+    .json({
+      message: "There was an error in updating the database entry."
+    })
+  }
+}
+
+
+export const deleteCustomerController = async (req: Request, res: Response) =>{
+  try{
+    const customer = await deleteCustomerService(req.body);
+
+    if(customer){
+      res.status(200)
+      .json({
+        message: "Customer deleted successfully."
+      })
+    }
+
+       res.status(500)
+          .json({
+            message: "Customer deleted successfully."
+          })
+  }catch(error: any){
+    res.status(500)
+    .json({
+      message: "Customer deleted successfully."
+    })
+  }
+}
