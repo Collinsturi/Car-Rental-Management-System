@@ -8,6 +8,34 @@
       "when": 1748252817205,
       "tag": "0000_fine_azazel",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1748542303634,
+      "tag": "0001_dusty_vargas",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1748543191574,
+      "tag": "0002_careless_bloodscream",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1748543746026,
+      "tag": "0003_slim_puppet_master",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1748543821900,
+      "tag": "0004_nappy_reaper",
+      "breakpoints": true
     }
   ]
 }

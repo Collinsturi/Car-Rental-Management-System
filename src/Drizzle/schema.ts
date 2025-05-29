@@ -1,7 +1,29 @@
 
 import { relations } from "drizzle-orm";
-import { text, varchar, serial, pgTable, decimal, integer, boolean, date } from "drizzle-orm/pg-core";
+import { text, varchar, serial, pgTable, decimal, integer, boolean, date, pgEnum } from "drizzle-orm/pg-core";
 
+//For version 2 of the schema I migrated the Common user attributes from the Customer's table 
+// to a more genric User table to pave way for the admin table:
+//INSERT INTO users (email, password, role)
+
+//1.  SELECT "Email", '<some_default_or_generated_password>', 'customer' FROM customer;
+
+
+//2.    UPDATE customer
+//      SET "userID" = users."userID"
+//      FROM users
+//      WHERE customer."Email" = users."email";
+
+
+export const RoleEnum = pgEnum("role", ["admin", "user"])
+
+export const UsersTable = pgTable("users", {
+    userID: serial("userID").primaryKey(),
+    email: varchar("email", { length: 100 }).notNull().unique(),
+    password: varchar("password", { length: 255 }).notNull(), 
+    role: RoleEnum("role").default("user"),
+    createdAt: date("created_at").defaultNow(),
+});
 
 // customer table
 export const CustomerTable = pgTable("customer", {
@@ -10,8 +32,16 @@ export const CustomerTable = pgTable("customer", {
     lastName: varchar("LastName", { length: 50 }).notNull(),
     email: varchar("Email", { length: 100 }).notNull().unique(),
     phoneNumber: text("PhoneNumber"),
-    address: varchar("Address", { length: 255 })
+    address: varchar("Address", { length: 255 }),
+    userID: integer("userID").notNull().references(() => UsersTable.userID, { onDelete: "cascade" }).unique()
 });
+
+export const AdminTable = pgTable("admin", {
+    adminID: serial("adminID").primaryKey(),
+    userID: integer("userID").notNull().references(() => UsersTable.userID, { onDelete: "cascade" }).unique(),
+    name: varchar("name", { length: 100 })
+});
+
 
 // Location Table
 export const LocationTable = pgTable("location", {
@@ -87,7 +117,11 @@ export const InsuranceTable = pgTable("insurance", {
 // RELATIONSHIPS
 
 // CustomerTable Relationships - 1 customer can have many reservations and bookings
-export const CustomerRelations = relations(CustomerTable, ({ many }) => ({
+export const CustomerRelations = relations(CustomerTable, ({ many, one }) => ({
+    user: one(UsersTable, {
+        fields: [CustomerTable.userID],
+        references: [UsersTable.userID]
+    }),
     reservations: many(ReservationTable),
     bookings: many(BookingsTable)
 }))
@@ -167,3 +201,5 @@ export type BookingEntity = typeof BookingsTable.$inferSelect;
 export type PaymentEntity = typeof PaymentTable.$inferSelect;
 export type MaintenanceEntity = typeof MaintenanceTable.$inferSelect;
 export type InsuranceEntity = typeof InsuranceTable.$inferSelect;
+export type UserEntity = typeof UsersTable.$inferSelect;
+export type AdminEntity = typeof AdminTable.$inferSelect
