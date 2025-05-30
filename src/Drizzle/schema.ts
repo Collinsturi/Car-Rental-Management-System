@@ -19,7 +19,11 @@ export const RoleEnum = pgEnum("role", ["admin", "user"])
 
 export const UsersTable = pgTable("users", {
     userID: serial("userID").primaryKey(),
-    email: varchar("email", { length: 100 }).notNull().unique(),
+    firstName: varchar("FirstName", { length: 50 }).notNull(),
+    lastName: varchar("LastName", { length: 50 }).notNull(),
+    email: varchar("Email", { length: 100 }).notNull().unique(),
+    phoneNumber: text("PhoneNumber"),
+    address: varchar("Address", { length: 255 }),
     password: varchar("password", { length: 255 }).notNull(), 
     role: RoleEnum("role").default("user"),
     createdAt: date("created_at").defaultNow(),
@@ -29,19 +33,13 @@ export const UsersTable = pgTable("users", {
 
 // customer table
 export const CustomerTable = pgTable("customer", {
-    customerID: serial("customerID").primaryKey(),
-    firstName: varchar("FirstName", { length: 50 }).notNull(),
-    lastName: varchar("LastName", { length: 50 }).notNull(),
-    email: varchar("Email", { length: 100 }).notNull().unique(),
-    phoneNumber: text("PhoneNumber"),
-    address: varchar("Address", { length: 255 }),
+    customerID: serial("customerID").primaryKey(),   
     userID: integer("userID").notNull().references(() => UsersTable.userID, { onDelete: "cascade" }).unique()
 });
 
 export const AdminTable = pgTable("admin", {
     adminID: serial("adminID").primaryKey(),
     userID: integer("userID").notNull().references(() => UsersTable.userID, { onDelete: "cascade" }).unique(),
-    name: varchar("name", { length: 100 })
 });
 
 

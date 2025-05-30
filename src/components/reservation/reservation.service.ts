@@ -1,4 +1,4 @@
-import db from "../Drizzle/db";
+import db from "../../Drizzle/db";
 import {
   eq,
   and,
@@ -10,7 +10,7 @@ import {
   lte,
   lt,
 } from "drizzle-orm";
-import { CustomerTable, ReservationEntity, ReservationTable } from "../Drizzle/schema";
+import { CustomerTable, ReservationEntity, ReservationTable } from "../../Drizzle/schema";
 import reservation from "./reservation.router";
 
 // Get reservation by customer ID

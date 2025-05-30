@@ -6,13 +6,25 @@ import {
     getBookingsByCustomerIdController,
     getAllBookingsController
 } from "./booking.controller";
+import { bothRoleAuth } from "../../middleware/bearAuth";
 
 const bookingRoute = (app: Express) => {
-    app.route("/booking").post(createBookingController);               // Create booking
-    app.route("/booking/:bookingId").get(getBookingByIdController);    // Get booking by ID
-    app.route("/booking/car/:carId").get(getBookingsByCarIdController);  // Get by card ID
-    app.route("/booking/customer/:customerId").get(getBookingsByCustomerIdController); // Get by customer ID
-    app.route("/booking").get(getAllBookingsController);               // Get all bookings
+    app.route("/booking").post( 
+        bothRoleAuth,
+        createBookingController
+    );               // Create booking
+    app.route("/booking/:bookingId").get(
+        bothRoleAuth,
+        getBookingByIdController);    // Get booking by ID
+    app.route("/booking/car/:carId").get(
+        bothRoleAuth,
+        getBookingsByCarIdController);  // Get by card ID
+    app.route("/booking/customer/:customerId").get(
+        bothRoleAuth,
+        getBookingsByCustomerIdController); // Get by customer ID
+    app.route("/booking").get(
+        bothRoleAuth,
+        getAllBookingsController);               // Get all bookings
 };
 
 export default bookingRoute;

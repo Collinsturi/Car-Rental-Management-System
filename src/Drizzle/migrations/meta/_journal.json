@@ -43,6 +43,13 @@
       "when": 1748545810293,
       "tag": "0005_flaky_captain_midlands",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1748546914171,
+      "tag": "0006_chilly_smasher",
+      "breakpoints": true
     }
   ]
 }

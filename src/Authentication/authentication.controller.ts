@@ -1,15 +1,16 @@
 import { Request, Response } from "express";
-import { createUserService, getUserByEmailService, userLoginService, verifyUserService } from "./auth.service";
+import { createUserService, getUserByEmailService, userLoginService, verifyUserService } from "./authentication.service";
 import bycrypt from "bcryptjs";
 import "dotenv/config"
 import jwt from "jsonwebtoken"
 import { sendEmail } from "../communication/mailer";
+import { UserEntity } from "../Drizzle/schema";
 
 // create a user controller
 export const createUserController = async (req: Request, res: Response) => {
     try {
 
-        const user = req.body;
+        const user: UserEntity = req.body;
         const password = user.password;
         const hashedPassword = await bycrypt.hashSync(password, 10)
         user.password = hashedPassword
@@ -45,13 +46,16 @@ export const createUserController = async (req: Request, res: Response) => {
 
 export const verifyUserController = async (req: Request, res: Response) => {
     const { email, code } = req.body;
+    console.log(email, code)
     try {
         const user = await getUserByEmailService(email);
+
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
+        console.log(user)
 
-        if (user.verificationCode === code) {
+        if (user.verificationCode == code) {
             await verifyUserService(email);
 
             // Send verification success email
@@ -63,7 +67,7 @@ export const verifyUserController = async (req: Request, res: Response) => {
                     `<div>
                     <h2>Hello ${user.lastName},</h2>
                     <p>Your account has been <strong>successfully verified</strong>!</p>
-                     <p>You can now log in and enjoy our services.</p>
+                     <p>You can now log in your account using the credentials you provided at register.</p>
                      </div>`
                 )
 

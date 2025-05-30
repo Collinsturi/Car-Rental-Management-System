@@ -1,6 +1,6 @@
 import { eq, ilike } from "drizzle-orm";
-import db from "../Drizzle/db";
-import { InsuranceTable, InsuranceEntity } from "../Drizzle/schema";
+import db from "../../Drizzle/db";
+import { InsuranceTable, InsuranceEntity } from "../../Drizzle/schema";
 
 // Create insurance
 export const createInsuranceService = async (insuranceData: InsuranceEntity) => {

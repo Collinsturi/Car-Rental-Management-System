@@ -1,7 +1,7 @@
 import { Express } from "express";
 import { createUserController, loginUserController, verifyUserController } from "./authentication.controller";
 
-const user = (app: Express) => {
+const userRoute = (app: Express) => {
     // route
     app.route("/auth/register").post(
         async (req, res, next) => {
@@ -38,4 +38,4 @@ const user = (app: Express) => {
     )
 }
 
-export default user;
+export default userRoute;
