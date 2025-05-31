@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import {createCarService, getAllAvailableCarsService, getCarByIdService, getCarsByCarModelService, getAllCarsInACertainLocationService} from "./car.service";
+import {createCarService, getAllAvailableCarsService, getCarByIdService, getCarsByCarModelService, getAllCarsInACertainLocationService, updateCarsService} from "./car.service";
 
 //Create a car entry
 export const createCarController = async(req: Request, res: Response) => {
@@ -156,5 +156,23 @@ export const getCarsByLocation = async(req: Request, res: Response) => {
             message: error.message,
         });
     }
+}
+
+export const updateCarsController = async(req: Request, res: Response) => {
+    const updatedCars = updateCarsService(req.body);
+
+    if(!updatedCars){
+        res.status(500)
+        .json({
+            message: "There was an error in updating the car"
+        })
+        return;
+    }
+
+    res.status(200)
+    .json({
+        message: "Car updated successfully.",
+        data: updatedCars
+    })
 }
 

@@ -120,3 +120,11 @@ export const getAllCarsInACertainLocationService = async (locationName: string) 
         return[];
     }
 }
+
+export const updateCarsService = async(car: CarEntity) =>{
+    return db
+    .update(CarTable)
+        .set(car)
+        .where(eq(CarTable.carID, car.carID))
+        .returning();
+}

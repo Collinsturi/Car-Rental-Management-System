@@ -4,7 +4,8 @@ import {
     getAllAvailableCars,
     getCarsByLocation,
     createCarController,
-    getCarByIdController
+    getCarByIdController,
+    updateCarsController
 } from './car.controller';
 import { adminRoleAuth, bothRoleAuth } from '../../middleware/bearAuth';
 
@@ -33,6 +34,12 @@ const carRouter = (app: Express) => {
     app.route('/cars/location/:location').get(
         bothRoleAuth,
         getCarsByLocation);
+
+
+    app.route('/cars/').patch(
+        adminRoleAuth,
+        updateCarsController
+    )
 };
 
 export default carRouter;

@@ -1,6 +1,6 @@
 import db from '../../Drizzle/db';
 import { eq } from 'drizzle-orm';
-import { CustomerEntity, CustomerTable } from '../../Drizzle/schema';
+import { CustomerEntity, CustomerTable, UsersTable } from '../../Drizzle/schema';
 
 // Create customer
 export const createCustomerService = async (customerData: any) => {
@@ -9,8 +9,8 @@ export const createCustomerService = async (customerData: any) => {
 
 // Get customer by email
 export const getCustomerByEmailService = async (email: string) => {
-  return await db.query.CustomerTable.findFirst({
-    where: eq(CustomerTable.email, email),
+  return await db.query.UsersTable.findFirst({
+    where: eq(UsersTable.email, email),
   });
 };
 

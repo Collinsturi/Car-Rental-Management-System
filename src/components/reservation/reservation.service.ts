@@ -10,7 +10,7 @@ import {
   lte,
   lt,
 } from "drizzle-orm";
-import { CustomerTable, ReservationEntity, ReservationTable } from "../../Drizzle/schema";
+import { CustomerTable, ReservationEntity, ReservationTable, UsersTable } from "../../Drizzle/schema";
 import reservation from "./reservation.router";
 
 // Get reservation by customer ID
@@ -30,7 +30,7 @@ export const getReservationByCarIdService = async (carId: number) => {
 
 // Get cars that have been returned (returnDate < NOW)
 export const getReturnedCarsService = async () => {
-    const now = new Date();
+    const now = new Date().toISOString().split("T")[0];
 
     return await db.select()
         .from(ReservationTable)
@@ -40,7 +40,7 @@ export const getReturnedCarsService = async () => {
 
 // Get currently reserved cars
 export const getCurrentlyReservedCarsService = async () => {
-  const now = new Date();
+  const now = new Date().toISOString().split("T")[0];
 
   return await db
     .select()
@@ -59,8 +59,8 @@ export const getCurrentlyReservedCarsService = async () => {
 // Get currently reserved cars by customer
 export const getCurrentlyReservedCarsByCustomerService = async (customerName: string) => {
   // Get the customer record
-  const customer = await db.query.CustomerTable.findFirst({
-    where: eq(CustomerTable.firstName, customerName),
+  const customer = await db.query.UsersTable.findFirst({
+    where: eq(UsersTable.firstName, customerName),
   });
 
   console.log(customer)
@@ -72,7 +72,7 @@ export const getCurrentlyReservedCarsByCustomerService = async (customerName: st
   // Find currently reserved cars for the customer
   return await db.query.ReservationTable.findMany({
     where: and(
-      eq(ReservationTable.customerID, customer.customerID),
+      eq(ReservationTable.customerID, customer.userID),
       // or(
       //   isNull(ReservationTable.returnDate), // Not returned yet
       // )

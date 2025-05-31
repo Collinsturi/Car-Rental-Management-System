@@ -96,7 +96,6 @@ export const loginUserController = async (req: Request, res: Response) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // verify the password - mypassword123 - $2b$10$0cbYaTQm2MzqJiK7FKMzU.2a1w5/6Mu3RuCn8SLEWXQcRIeflRqdG
         const userMatch = await bycrypt.compareSync(user.password, userExist.password)
         if (!userMatch) {
             return res.status(401).json({ message: "Invalid credentials" });
@@ -104,10 +103,10 @@ export const loginUserController = async (req: Request, res: Response) => {
 
         // create a payload
         const payload = {
-            sub: userExist.id,
-            user_id: userExist.id,
-            first_name: userExist.firstName,
-            last_name: userExist.lastName,
+            sub: userExist.userID,
+            user_id: userExist.userID,
+            first_name: userExist.email,
+            last_name: userExist.email,
             role: userExist.role,
             exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24
         }
@@ -119,14 +118,13 @@ export const loginUserController = async (req: Request, res: Response) => {
         }
         const token = jwt.sign(payload, secret)
 
-        // return the token with user info
         return res.status(200).json({
             message: "Login successfull",
             token,
             user: {
-                user_id: userExist.id,
-                first_name: userExist.firstName,
-                last_name: userExist.lastName,
+                user_id: userExist.userID,
+                // first_name: userExist.email,
+                // last_name: userExist.email,
                 email: userExist.email,
                 role: userExist.role
             }
