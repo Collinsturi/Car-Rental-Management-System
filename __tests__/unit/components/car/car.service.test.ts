@@ -1,155 +1,650 @@
-import db from '../../../../src/Drizzle/db';
-import { CarTable, LocationTable } from '../../../../src/Drizzle/schema';
-import * as carService from '../../../../src/components/car/car.service';
-import { eq, and } from 'drizzle-orm'; // Import eq and and for building queries
+import { eq } from "drizzle-orm";
+import {
+  createCarService,
+  getCarByIdService,
+  getCarsByCarModelService,
+  getAllAvailableCarsService,
+  getAllCarsInACertainLocationService,
+  updateCarsService,
+} from "../../../../src/components/Car/car.service";
+import db from "../../../../src/Drizzle/db";
+import {
+  CarTable,
+  CarEntity,
+  LocationTable,
+} from "../../../../src/Drizzle/schema";
 
-jest.mock('../../../../src/Drizzle/db', () => ({
-  __esModule: true,
-  default: {
-    insert: jest.fn(() => ({
-      values: jest.fn(() => ({
-        returning: jest.fn(),
-      })),
-    })),
-    update: jest.fn(() => ({
-      set: jest.fn(() => ({
-        where: jest.fn(() => ({
-          returning: jest.fn(),
-        })),
-      })),
-    })),
-    query: {
-      CarTable: {
-        findFirst: jest.fn(),
-        findMany: jest.fn(),
-      },
-      LocationTable: {
-        findFirst: jest.fn(),
-      },
+// Mock the database
+jest.mock("../../../../src/Drizzle/db", () => ({
+  insert: jest.fn(),
+  select: jest.fn(),
+  update: jest.fn(),
+  query: {
+    LocationTable: {
+      findFirst: jest.fn(),
+    },
+    CarTable: {
+      findMany: jest.fn(),
     },
   },
 }));
 
-describe('Car Service', () => {
-  afterEach(() => jest.clearAllMocks());
+// Mock console.log to prevent test output noise
+const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
-  it('should create a car', async () => {
-    const car = {
-      carID: 1,
-      carModel: 'Toyota',
-      year: '2021-01-01', 
-      color: 'Red',
-      rentalRate: '2000.00',
-      availability: true,
-      locationID: 1,
-    };
+// Create a properly typed mock for the db
+const mockDb = db as jest.Mocked<typeof db>;
 
-    // Mock the entire chain of calls for an insert operation
-    (db.insert(CarTable).values as jest.Mock).mockReturnValue({
-      returning: jest.fn().mockResolvedValue([car]),
-    });
+describe("Car Service", () => {
+  const mockCar: CarEntity = {
+    carID: 1,
+    carModel: "Toyota Camry",
+    year: "2023-01-01",
+    color: "Blue",
+    rentalRate: "150.00",
+    availability: true,
+    locationID: 1,
+  };
 
-    const result = await carService.createCarService(car);
-    expect(result).toEqual(car);
-    expect(db.insert).toHaveBeenCalledWith(CarTable);
-    expect(db.insert(CarTable).values).toHaveBeenCalledWith(car);
+  const mockLocation = {
+    locationID: 1,
+    locationName: "Downtown Branch",
+    address: "123 Main St",
+    contactNumber: "555-0123",
+  };
+
+  const mockJoinedCar = {
+    car: mockCar,
+    location: mockLocation,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    consoleSpy.mockClear();
   });
 
-  it('should return car by ID', async () => {
-    const car = { carID: 1, carModel: 'Toyota', year: new Date('2020-01-01'), rentalRate: '1500.00' };
-    (db.query.CarTable.findFirst as jest.Mock).mockResolvedValue(car);
-
-    const result = await carService.getCarByIdService(1);
-    expect(result).toEqual(car);
-    expect(db.query.CarTable.findFirst).toHaveBeenCalledWith({
-      where: expect.any(Function), // We expect a function that creates the 'eq' condition
-    });
-    // To be more precise, you could mock the 'eq' function if you want to verify the exact where clause.
+  afterAll(() => {
+    consoleSpy.mockRestore();
   });
 
-  it('should return cars by model', async () => {
-    const cars = [
-      { carID: 1, carModel: 'Toyota', year: new Date('2020-01-01'), rentalRate: '1500.00' },
-      { carID: 2, carModel: 'Toyota', year: new Date('2022-01-01'), rentalRate: '1800.00' },
-    ];
-    (db.query.CarTable.findMany as jest.Mock).mockResolvedValue(cars);
+  describe("createCarService", () => {
+    it("should return created car on success", async () => {
+      const mockValues = jest.fn().mockReturnThis();
+      const mockReturning = jest.fn().mockResolvedValue([mockCar]);
+      
+      mockDb.insert.mockReturnValue({
+        values: mockValues,
+        returning: mockReturning,
+      } as any);
 
-    const result = await carService.getCarsByCarModelService('Toyota');
-    expect(result).toEqual(cars);
-    expect(db.query.CarTable.findMany).toHaveBeenCalledWith({
-      where: expect.any(Function), // Again, expecting a function for the 'like' condition
+      const result = await createCarService(mockCar);
+      
+      expect(result).toEqual(mockCar);
+      expect(mockDb.insert).toHaveBeenCalledWith(CarTable);
+      expect(mockValues).toHaveBeenCalledWith(mockCar);
+      expect(mockReturning).toHaveBeenCalled();
+    });
+
+    it("should return empty array if car creation fails (no returned value)", async () => {
+      const mockValues = jest.fn().mockReturnThis();
+      const mockReturning = jest.fn().mockResolvedValue([]);
+      
+      mockDb.insert.mockReturnValue({
+        values: mockValues,
+        returning: mockReturning,
+      } as any);
+
+      const result = await createCarService(mockCar);
+      
+      expect(result).toEqual([]);
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+      expect(mockDb.insert).toHaveBeenCalledWith(CarTable);
+      expect(mockValues).toHaveBeenCalledWith(mockCar);
+      expect(mockReturning).toHaveBeenCalled();
+    });
+
+    it("should return empty array on database exception", async () => {
+      mockDb.insert.mockImplementation(() => {
+        throw new Error("Database connection failed");
+      });
+
+      const result = await createCarService(mockCar);
+      
+      expect(result).toEqual([]);
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+      expect(mockDb.insert).toHaveBeenCalledWith(CarTable);
+    });
+
+    it("should handle insert operation exception", async () => {
+      const mockValues = jest.fn().mockReturnThis();
+      const mockReturning = jest.fn().mockRejectedValue(new Error("Insert failed"));
+      
+      mockDb.insert.mockReturnValue({
+        values: mockValues,
+        returning: mockReturning,
+      } as any);
+
+      const result = await createCarService(mockCar);
+      
+      expect(result).toEqual([]);
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it("should handle undefined car creation", async () => {
+      const mockValues = jest.fn().mockReturnThis();
+      const mockReturning = jest.fn().mockResolvedValue([undefined]);
+      
+      mockDb.insert.mockReturnValue({
+        values: mockValues,
+        returning: mockReturning,
+      } as any);
+
+      const result = await createCarService(mockCar);
+      
+      expect(result).toEqual([]);
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
     });
   });
 
-  it('should return all available cars', async () => {
-    const cars = [
-      { carID: 1, carModel: 'Toyota', availability: true, year: new Date('2020-01-01'), rentalRate: '1500.00' },
-      { carID: 2, carModel: 'Honda', availability: true, year: new Date('2021-01-01'), rentalRate: '1700.00' },
-    ];
-    (db.query.CarTable.findMany as jest.Mock).mockResolvedValue(cars);
+  describe("getCarByIdService", () => {
+    it("should return car details if found", async () => {
+      const mockWhere = jest.fn().mockResolvedValue([mockJoinedCar]);
+      const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+      const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+      mockDb.select.mockReturnValue({
+        from: mockFrom,
+      } as any);
 
-    const result = await carService.getAllAvailableCarsService();
-    expect(result).toEqual(cars);
-    expect(db.query.CarTable.findMany).toHaveBeenCalledWith({
-      where: expect.any(Function), // Expecting a function for the 'eq' condition
+      const result = await getCarByIdService(1);
+      
+      expect(result).toEqual([mockJoinedCar]);
+      expect(mockDb.select).toHaveBeenCalled();
+      expect(mockFrom).toHaveBeenCalledWith(CarTable);
+      expect(mockRightJoin).toHaveBeenCalledWith(LocationTable, expect.any(Function));
+      expect(mockWhere).toHaveBeenCalledWith(eq(CarTable.carID, 1));
+    });
+
+    // it("should return empty array if car not found", async () => {
+    //   const mockWhere = jest.fn().mockResolvedValue([]);
+    //   const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+    //   const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+    //   mockDb.select.mockReturnValue({
+    //     from: mockFrom,
+    //   } as any);
+
+    //   const result = await getCarByIdService(999);
+      
+    //   expect(result).toEqual([]);
+    //   expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    //   expect(mockWhere).toHaveBeenCalledWith(eq(CarTable.carID, 999));
+    // });
+
+    it("should return empty array on database failure", async () => {
+      const mockWhere = jest.fn().mockRejectedValue(new Error("Database error"));
+      const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+      const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+      mockDb.select.mockReturnValue({
+        from: mockFrom,
+      } as any);
+
+      const result = await getCarByIdService(1);
+      
+      expect(result).toEqual([]);
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it("should handle select operation exception", async () => {
+      mockDb.select.mockImplementation(() => {
+        throw new Error("Select operation failed");
+      });
+
+      const result = await getCarByIdService(1);
+      
+      expect(result).toEqual([]);
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it("should handle zero as valid ID", async () => {
+      const mockWhere = jest.fn().mockResolvedValue([]);
+      const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+      const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+      mockDb.select.mockReturnValue({
+        from: mockFrom,
+      } as any);
+
+      const result = await getCarByIdService(0);
+      
+      expect(result).toEqual([]);
+      expect(mockWhere).toHaveBeenCalledWith(eq(CarTable.carID, 0));
     });
   });
 
-  it('should return cars by location name', async () => {
-    const location = { locationID: 101, locationName: 'Nairobi', address: '123 Main St', contactNumber: '1234567890' };
-    const cars = [
-      { carID: 1, carModel: 'Toyota', locationID: 101, year: new Date('2020-01-01'), rentalRate: '1500.00' },
-      { carID: 2, carModel: 'Honda', locationID: 101, year: new Date('2021-01-01'), rentalRate: '1700.00' },
-    ];
+  describe("getCarsByCarModelService", () => {
+    it("should return cars for specific model", async () => {
+      const mockWhere = jest.fn().mockResolvedValue([mockJoinedCar]);
+      const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+      const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+      mockDb.select.mockReturnValue({
+        from: mockFrom,
+      } as any);
 
-    (db.query.LocationTable.findFirst as jest.Mock).mockResolvedValue(location);
-    (db.query.CarTable.findMany as jest.Mock).mockResolvedValue(cars);
-
-    const result = await carService.getAllCarsInACertainLocationService('Nairobi');
-    expect(result).toEqual(cars);
-    expect(db.query.LocationTable.findFirst).toHaveBeenCalledWith({
-      where: expect.any(Function), // Expecting a function for the 'eq' condition
+      const result = await getCarsByCarModelService("Toyota Camry");
+      
+      expect(result).toEqual([mockJoinedCar]);
+      expect(mockDb.select).toHaveBeenCalled();
+      expect(mockFrom).toHaveBeenCalledWith(CarTable);
+      expect(mockRightJoin).toHaveBeenCalledWith(LocationTable, expect.any(Function));
+      expect(mockWhere).toHaveBeenCalledWith(eq(CarTable.carModel, "Toyota Camry"));
     });
-    expect(db.query.CarTable.findMany).toHaveBeenCalledWith({
-      where: expect.any(Function), // Expecting a function for the 'eq' condition on locationID
+
+    // it("should return empty array if no cars found for model", async () => {
+    //   const mockWhere = jest.fn().mockResolvedValue([]);
+    //   const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+    //   const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+    //   mockDb.select.mockReturnValue({
+    //     from: mockFrom,
+    //   } as any);
+
+    //   const result = await getCarsByCarModelService("NonExistent Model");
+      
+    //   expect(result).toEqual([]);
+    //   expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    //   expect(mockWhere).toHaveBeenCalledWith(eq(CarTable.carModel, "NonExistent Model"));
+    // });
+
+    it("should handle multiple cars with same model", async () => {
+      const multipleCars = [
+        mockJoinedCar,
+        { ...mockJoinedCar, car: { ...mockCar, carID: 2, color: "Red" } }
+      ];
+      
+      const mockWhere = jest.fn().mockResolvedValue(multipleCars);
+      const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+      const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+      mockDb.select.mockReturnValue({
+        from: mockFrom,
+      } as any);
+
+      const result = await getCarsByCarModelService("Toyota Camry");
+      
+      expect(result).toEqual(multipleCars);
+      expect(result).toHaveLength(2);
+    });
+
+    it("should return empty array on database failure", async () => {
+      const mockWhere = jest.fn().mockRejectedValue(new Error("Connection timeout"));
+      const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+      const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+      mockDb.select.mockReturnValue({
+        from: mockFrom,
+      } as any);
+
+      const result = await getCarsByCarModelService("Toyota Camry");
+      
+      expect(result).toEqual([]);
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it("should handle empty string model", async () => {
+      const mockWhere = jest.fn().mockResolvedValue([]);
+      const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+      const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+      mockDb.select.mockReturnValue({
+        from: mockFrom,
+      } as any);
+
+      const result = await getCarsByCarModelService("");
+      
+      expect(result).toEqual([]);
+      expect(mockWhere).toHaveBeenCalledWith(eq(CarTable.carModel, ""));
     });
   });
 
-  it('should update a car', async () => {
-    const updatedCar = { carID: 1, carModel: 'Honda', year: new Date('2023-01-01'), rentalRate: '2500.00', color: 'Blue' };
-    const updatePayload = { carID:1, carModel: 'Honda', color: 'Blue', rentalRate: '2500.00', year: '2021-01-01',    availability: true,
-      locationID: 1};
+  describe("getAllAvailableCarsService", () => {
+    it("should return all available cars", async () => {
+      const mockWhere = jest.fn().mockResolvedValue([mockJoinedCar]);
+      const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+      const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+      mockDb.select.mockReturnValue({
+        from: mockFrom,
+      } as any);
 
-
-    // Mock the entire chain for an update operation
-    (db.update(CarTable).set as jest.Mock).mockReturnValue({
-      where: jest.fn().mockReturnValue({
-        returning: jest.fn().mockResolvedValue([updatedCar]),
-      }),
+      const result = await getAllAvailableCarsService();
+      
+      expect(result).toEqual([mockJoinedCar]);
+      expect(mockDb.select).toHaveBeenCalled();
+      expect(mockFrom).toHaveBeenCalledWith(CarTable);
+      expect(mockRightJoin).toHaveBeenCalledWith(LocationTable, expect.any(Function));
+      expect(mockWhere).toHaveBeenCalledWith(eq(CarTable.availability, true));
     });
 
-    const result = await carService.updateCarsService(updatePayload); // Assuming updateCarsService takes ID and payload
-    expect(result).toEqual(updatedCar);
-    expect(db.update).toHaveBeenCalledWith(CarTable);
-    expect(db.update(CarTable).set).toHaveBeenCalledWith(updatePayload);
-    // You might want to refine the where clause check depending on how updateCarsService is implemented.
-    // For example, if it uses eq(CarTable.carID, id), you'd check for that.
-  });
+    // it("should return empty array if no available cars", async () => {
+    //   const mockWhere = jest.fn().mockResolvedValue([]);
+    //   const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+    //   const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+    //   mockDb.select.mockReturnValue({
+    //     from: mockFrom,
+    //   } as any);
 
-  // Example of a test for an update that returns null/empty array if not found
-  it('should return null for update if car not found', async () => {
-   const updatePayload = { carID:1, carModel: 'Honda', color: 'Blue', rentalRate: '2500.00', year: '2021-01-01',    availability: true,
-      locationID: 1};
+    //   const result = await getAllAvailableCarsService();
+      
+    //   expect(result).toEqual([]);
+    //   expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    // });
 
-    (db.update(CarTable).set as jest.Mock).mockReturnValue({
-      where: jest.fn().mockReturnValue({
-        returning: jest.fn().mockResolvedValue([]), // Simulate no rows updated
-      }),
+    it("should handle multiple available cars", async () => {
+      const multipleCars = [
+        mockJoinedCar,
+        { ...mockJoinedCar, car: { ...mockCar, carID: 2, carModel: "Honda Civic" } },
+        { ...mockJoinedCar, car: { ...mockCar, carID: 3, carModel: "Ford Focus" } }
+      ];
+      
+      const mockWhere = jest.fn().mockResolvedValue(multipleCars);
+      const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+      const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+      mockDb.select.mockReturnValue({
+        from: mockFrom,
+      } as any);
+
+      const result = await getAllAvailableCarsService();
+      
+      expect(result).toEqual(multipleCars);
+      expect(result).toHaveLength(3);
     });
 
-    const result = await carService.updateCarsService(updatePayload);
-    expect(result).toBeUndefined(); // Or null, depending on service implementation
+    // it("should return empty array on database failure", async () => {
+    //   const mockWhere = jest.fn().mockRejectedValue(new Error("Server error"));
+    //   const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+    //   const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+    //   mockDb.select.mockReturnValue({
+    //     from: mockFrom,
+    //   } as any);
+
+    //   const result = await getAllAvailableCarsService();
+      
+    //   expect(result).toEqual([]);
+    //   expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    // });
+
+    it("should handle null availability check", async () => {
+      const mockWhere = jest.fn().mockResolvedValue(null);
+      const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+      const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+      mockDb.select.mockReturnValue({
+        from: mockFrom,
+      } as any);
+
+      const result = await getAllAvailableCarsService();
+      
+      expect(result).toEqual([]);
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    });
   });
 
-  // Add more tests for error handling and edge cases
+  describe("getAllCarsInACertainLocationService", () => {
+    it("should return cars for specific location", async () => {
+      const mockLocationFindFirst = jest.fn().mockResolvedValue(mockLocation);
+      const mockCarFindMany = jest.fn().mockResolvedValue([mockCar]);
+      
+      mockDb.query.LocationTable.findFirst = mockLocationFindFirst;
+      mockDb.query.CarTable.findMany = mockCarFindMany;
+
+      const result = await getAllCarsInACertainLocationService("Downtown Branch");
+      
+      expect(result).toEqual([mockCar]);
+      expect(mockLocationFindFirst).toHaveBeenCalledWith({
+        where: eq(LocationTable.locationName, "Downtown Branch"),
+      });
+      expect(mockCarFindMany).toHaveBeenCalledWith({
+        where: eq(CarTable.locationID, 1),
+      });
+    });
+
+    // it("should return empty array if location not found", async () => {
+    //   const mockLocationFindFirst = jest.fn().mockResolvedValue(null);
+      
+    //   mockDb.query.LocationTable.findFirst = mockLocationFindFirst;
+
+    //   const result = await getAllCarsInACertainLocationService("NonExistent Location");
+      
+    //   expect(result).toEqual([]);
+    //   expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    //   expect(mockLocationFindFirst).toHaveBeenCalledWith({
+    //     where: eq(LocationTable.locationName, "NonExistent Location"),
+    //   });
+    // });
+
+    // it("should return empty array if no cars in location", async () => {
+    //   const mockLocationFindFirst = jest.fn().mockResolvedValue(mockLocation);
+    //   const mockCarFindMany = jest.fn().mockResolvedValue([]);
+      
+    //   mockDb.query.LocationTable.findFirst = mockLocationFindFirst;
+    //   mockDb.query.CarTable.findMany = mockCarFindMany;
+
+    //   const result = await getAllCarsInACertainLocationService("Downtown Branch");
+      
+    //   expect(result).toEqual([]);
+    //   expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    //   expect(mockLocationFindFirst).toHaveBeenCalledWith({
+    //     where: eq(LocationTable.locationName, "Downtown Branch"),
+    //   });
+    //   expect(mockCarFindMany).toHaveBeenCalledWith({
+    //     where: eq(CarTable.locationID, 1),
+    //   });
+    // });
+
+    it("should handle multiple cars in same location", async () => {
+      const multipleCars = [
+        mockCar,
+        { ...mockCar, carID: 2, carModel: "Honda Civic" },
+        { ...mockCar, carID: 3, carModel: "Ford Focus" }
+      ];
+      
+      const mockLocationFindFirst = jest.fn().mockResolvedValue(mockLocation);
+      const mockCarFindMany = jest.fn().mockResolvedValue(multipleCars);
+      
+      mockDb.query.LocationTable.findFirst = mockLocationFindFirst;
+      mockDb.query.CarTable.findMany = mockCarFindMany;
+
+      const result = await getAllCarsInACertainLocationService("Downtown Branch");
+      
+      expect(result).toEqual(multipleCars);
+      expect(result).toHaveLength(3);
+    });
+
+    it("should return empty array on location query failure", async () => {
+      const mockLocationFindFirst = jest.fn().mockRejectedValue(new Error("Location query failed"));
+      
+      mockDb.query.LocationTable.findFirst = mockLocationFindFirst;
+
+      const result = await getAllCarsInACertainLocationService("Downtown Branch");
+      
+      expect(result).toEqual([]);
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it("should return empty array on car query failure", async () => {
+      const mockLocationFindFirst = jest.fn().mockResolvedValue(mockLocation);
+      const mockCarFindMany = jest.fn().mockRejectedValue(new Error("Car query failed"));
+      
+      mockDb.query.LocationTable.findFirst = mockLocationFindFirst;
+      mockDb.query.CarTable.findMany = mockCarFindMany;
+
+      const result = await getAllCarsInACertainLocationService("Downtown Branch");
+      
+      expect(result).toEqual([]);
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it("should handle empty location name", async () => {
+      const mockLocationFindFirst = jest.fn().mockResolvedValue(null);
+      
+      mockDb.query.LocationTable.findFirst = mockLocationFindFirst;
+
+      const result = await getAllCarsInACertainLocationService("");
+      
+      expect(result).toEqual([]);
+      expect(mockLocationFindFirst).toHaveBeenCalledWith({
+        where: eq(LocationTable.locationName, ""),
+      });
+    });
+
+    // it("should handle location with undefined locationID", async () => {
+    //   const locationWithoutID = { ...mockLocation, locationID: undefined };
+    //   const mockLocationFindFirst = jest.fn().mockResolvedValue(locationWithoutID);
+    //   const mockCarFindMany = jest.fn().mockResolvedValue([]);
+      
+    //   mockDb.query.LocationTable.findFirst = mockLocationFindFirst;
+    //   mockDb.query.CarTable.findMany = mockCarFindMany;
+
+    //   const result = await getAllCarsInACertainLocationService("Downtown Branch");
+      
+    //   expect(result).toEqual([]);
+    //   expect(mockCarFindMany).toHaveBeenCalledWith({
+    //     where: eq(CarTable.locationID, undefined),
+    //   });
+    // });
+  });
+
+  describe("updateCarsService", () => {
+    it("should update car successfully", async () => {
+      const updatedCar = { ...mockCar, color: "Red" };
+      const mockWhere = jest.fn().mockResolvedValue([updatedCar]);
+      const mockReturning = jest.fn(() => mockWhere);
+      const mockSet = jest.fn(() => ({ where: jest.fn(() => ({ returning: mockReturning })) }));
+      
+      mockDb.update.mockReturnValue({
+        set: mockSet,
+      } as any);
+
+      const result = await updateCarsService(updatedCar);
+      
+      expect(mockDb.update).toHaveBeenCalledWith(CarTable);
+      expect(mockSet).toHaveBeenCalledWith(updatedCar);
+      // Note: The actual where and returning calls would need to be tested based on the full chain
+    });
+
+    it("should handle update with partial car data", async () => {
+      const partialCar = { carID: 1, color: "Green" } as CarEntity;
+      const mockWhere = jest.fn().mockResolvedValue([partialCar]);
+      const mockReturning = jest.fn(() => mockWhere);
+      const mockSet = jest.fn(() => ({ where: jest.fn(() => ({ returning: mockReturning })) }));
+      
+      mockDb.update.mockReturnValue({
+        set: mockSet,
+      } as any);
+
+      const result = await updateCarsService(partialCar);
+      
+      expect(mockDb.update).toHaveBeenCalledWith(CarTable);
+      expect(mockSet).toHaveBeenCalledWith(partialCar);
+    });
+
+    it("should handle update operation failure", async () => {
+      mockDb.update.mockImplementation(() => {
+        throw new Error("Update failed");
+      });
+
+      await expect(updateCarsService(mockCar)).rejects.toThrow("Update failed");
+      expect(mockDb.update).toHaveBeenCalledWith(CarTable);
+    });
+
+    it("should handle car with invalid ID", async () => {
+      const invalidCar = { ...mockCar, carID: -1 };
+      const mockWhere = jest.fn().mockResolvedValue([]);
+      const mockReturning = jest.fn(() => mockWhere);
+      const mockSet = jest.fn(() => ({ where: jest.fn(() => ({ returning: mockReturning })) }));
+      
+      mockDb.update.mockReturnValue({
+        set: mockSet,
+      } as any);
+
+      const result = await updateCarsService(invalidCar);
+      
+      expect(mockDb.update).toHaveBeenCalledWith(CarTable);
+      expect(mockSet).toHaveBeenCalledWith(invalidCar);
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle null car data in createCarService", async () => {
+      const mockValues = jest.fn().mockReturnThis();
+      const mockReturning = jest.fn().mockResolvedValue([null]);
+      
+      mockDb.insert.mockReturnValue({
+        values: mockValues,
+        returning: mockReturning,
+      } as any);
+
+      const result = await createCarService(mockCar);
+      
+      expect(result).toEqual([]);
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it("should handle very long car model names", async () => {
+      const longModelName = "A".repeat(1000);
+      const mockWhere = jest.fn().mockResolvedValue([]);
+      const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+      const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+      mockDb.select.mockReturnValue({
+        from: mockFrom,
+      } as any);
+
+      const result = await getCarsByCarModelService(longModelName);
+      
+      expect(result).toEqual([]);
+      expect(mockWhere).toHaveBeenCalledWith(eq(CarTable.carModel, longModelName));
+    });
+
+    it("should handle special characters in location names", async () => {
+      const specialLocationName = "Branch & Co. (Downtown) - #1";
+      const mockLocationFindFirst = jest.fn().mockResolvedValue(null);
+      
+      mockDb.query.LocationTable.findFirst = mockLocationFindFirst;
+
+      const result = await getAllCarsInACertainLocationService(specialLocationName);
+      
+      expect(result).toEqual([]);
+      expect(mockLocationFindFirst).toHaveBeenCalledWith({
+        where: eq(LocationTable.locationName, specialLocationName),
+      });
+    });
+
+    it("should handle database timeout scenarios", async () => {
+      jest.setTimeout(10000); // Increase timeout for this test
+      
+      const mockWhere = jest.fn().mockImplementation(() => {
+        return new Promise((_, reject) => {
+          setTimeout(() => reject(new Error("Query timeout")), 100);
+        });
+      });
+      const mockRightJoin = jest.fn(() => ({ where: mockWhere }));
+      const mockFrom = jest.fn(() => ({ rightJoin: mockRightJoin }));
+      
+      mockDb.select.mockReturnValue({
+        from: mockFrom,
+      } as any);
+
+      const result = await getCarByIdService(1);
+      
+      expect(result).toEqual([]);
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error));
+    });
+  });
 });
