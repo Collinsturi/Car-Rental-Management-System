@@ -22,7 +22,7 @@ export const getBookingByIdService = async (bookingId: number) => {
                 .from(BookingsTable)
                 .leftJoin(CarTable as any, eq(BookingsTable.carID, CarTable.carID))
                 .leftJoin(CustomerTable as any, eq(BookingsTable.customerID, CustomerTable.customerID))
-                .leftJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.customerID))
+                .leftJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.userID))
                 .where(eq(BookingsTable.bookingID, bookingId)); 
 
         return booking || null;
@@ -40,7 +40,7 @@ export const getBookingsByCarIdService = async (carId: number) => {
             .from(BookingsTable)
             .leftJoin(CarTable as any, eq(BookingsTable.carID, CarTable.carID))
             .leftJoin(CustomerTable as any, eq(BookingsTable.customerID, CustomerTable.customerID))
-            .leftJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.customerID))
+            .leftJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.userID))
             .where(eq(BookingsTable.carID, carId))
         
         ;
@@ -57,7 +57,7 @@ export const getBookingsByCustomerIdService = async (customerId: number) => {
             .from(BookingsTable)
             .leftJoin(CarTable as any, eq(BookingsTable.carID, CarTable.carID))
             .leftJoin(CustomerTable as any, eq(BookingsTable.customerID, CustomerTable.customerID))
-            .leftJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.customerID))
+            .leftJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.userID))
             .where(eq(BookingsTable.customerID, customerId))
 
             return bookings || [];
@@ -73,7 +73,7 @@ export const getAllBookingsService = async () => {
         .from(BookingsTable)
         .leftJoin(CarTable as any, eq(BookingsTable.carID, CarTable.carID))
         .leftJoin(CustomerTable as any, eq(BookingsTable.customerID, CustomerTable.customerID))
-        .leftJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.customerID));
+        .leftJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.userID));
 
         return bookings || [];
     } catch (error: any) {

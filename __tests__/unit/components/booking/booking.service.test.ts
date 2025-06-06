@@ -150,7 +150,7 @@ describe("Booking Service", () => {
       expect(mockFrom).toHaveBeenCalledWith(BookingsTable);
       expect(mockLeftJoin1).toHaveBeenCalledWith(CarTable, eq(BookingsTable.carID, CarTable.carID));
       expect(mockLeftJoin2).toHaveBeenCalledWith(CustomerTable, eq(BookingsTable.customerID, CustomerTable.customerID));
-      expect(mockLeftJoin3).toHaveBeenCalledWith(UsersTable, eq(UsersTable.userID, CustomerTable.customerID));
+      expect(mockLeftJoin3).toHaveBeenCalledWith(UsersTable, eq(UsersTable.userID, CustomerTable.userID));
       expect(mockWhere).toHaveBeenCalledWith(eq(BookingsTable.bookingID, 1));
     });
 
@@ -217,7 +217,7 @@ describe("Booking Service", () => {
       expect(mockFrom).toHaveBeenCalledWith(BookingsTable);
       expect(mockLeftJoin1).toHaveBeenCalledWith(CarTable, eq(BookingsTable.carID, CarTable.carID));
       expect(mockLeftJoin2).toHaveBeenCalledWith(CustomerTable, eq(BookingsTable.customerID, CustomerTable.customerID));
-      expect(mockLeftJoin3).toHaveBeenCalledWith(UsersTable, eq(UsersTable.userID, CustomerTable.customerID));
+      expect(mockLeftJoin3).toHaveBeenCalledWith(UsersTable, eq(UsersTable.userID, CustomerTable.userID));
       expect(mockWhere).toHaveBeenCalledWith(eq(BookingsTable.carID, 101));
     });
 
@@ -293,7 +293,7 @@ describe("Booking Service", () => {
       expect(mockFrom).toHaveBeenCalledWith(BookingsTable);
       expect(mockLeftJoin1).toHaveBeenCalledWith(CarTable, eq(BookingsTable.carID, CarTable.carID));
       expect(mockLeftJoin2).toHaveBeenCalledWith(CustomerTable, eq(BookingsTable.customerID, CustomerTable.customerID));
-      expect(mockLeftJoin3).toHaveBeenCalledWith(UsersTable, eq(UsersTable.userID, CustomerTable.customerID));
+      expect(mockLeftJoin3).toHaveBeenCalledWith(UsersTable, eq(UsersTable.userID, CustomerTable.userID));
       expect(mockWhere).toHaveBeenCalledWith(eq(BookingsTable.customerID, 202));
     });
 
@@ -371,7 +371,7 @@ describe("Booking Service", () => {
       expect(mockFrom).toHaveBeenCalledWith(BookingsTable);
       expect(mockLeftJoin1).toHaveBeenCalledWith(CarTable, eq(BookingsTable.carID, CarTable.carID));
       expect(mockLeftJoin2).toHaveBeenCalledWith(CustomerTable, eq(BookingsTable.customerID, CustomerTable.customerID));
-      expect(mockLeftJoin3).toHaveBeenCalledWith(UsersTable, eq(UsersTable.userID, CustomerTable.customerID));
+      expect(mockLeftJoin3).toHaveBeenCalledWith(UsersTable, eq(UsersTable.userID, CustomerTable.userID));
     });
 
     it("should return empty array if no bookings exist", async () => {
