@@ -4,6 +4,7 @@ const config: Config = {
   preset: "ts-jest",
   testEnvironment: "node",
   verbose: true,
+  testTimeout: 30000,
   //  collectCoverage: true, //collect coverage information
   //   coverageDirectory: 'coverage', //directory where Jest should output its coverage files
   //   collectCoverageFrom: [

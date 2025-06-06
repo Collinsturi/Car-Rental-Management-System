@@ -11,7 +11,7 @@ export const createCustomerService = async (customerData: any) => {
 export const getCustomerByEmailService = async (email: string) => {
   return await db.select()
     .from(UsersTable)
-    .rightJoin(CustomerTable as any, on => eq(CustomerTable.customerID, UsersTable.userID))
+    .leftJoin(CustomerTable as any, on => eq(CustomerTable.customerID, UsersTable.userID))
     .where(eq(UsersTable.email, email));
 
 };
@@ -20,7 +20,7 @@ export const getCustomerByEmailService = async (email: string) => {
 export const getCustomerByIdService = async (id: number) => {
   return await db.select()
     .from(CustomerTable)
-    .rightJoin(UsersTable as any, on => eq(CustomerTable.customerID, UsersTable.userID))
+    .leftJoin(UsersTable as any, on => eq(CustomerTable.customerID, UsersTable.userID))
     .where(eq(CustomerTable.customerID, id));
 
 };
@@ -29,7 +29,7 @@ export const getCustomerByIdService = async (id: number) => {
 export const getAllCustomersService = async () => {
   return await db.select()
     .from(CustomerTable)
-    .rightJoin(UsersTable as any, on => eq(CustomerTable.customerID, UsersTable.userID));
+    .leftJoin(UsersTable as any, on => eq(CustomerTable.customerID, UsersTable.userID));
 }
 
 
