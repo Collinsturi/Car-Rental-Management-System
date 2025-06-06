@@ -20,9 +20,9 @@ export const getBookingByIdService = async (bookingId: number) => {
     try {
         const booking = await db.select()
                 .from(BookingsTable)
-                .rightJoin(CarTable as any, eq(BookingsTable.carID, CarTable.carID))
-                .rightJoin(CustomerTable as any, eq(BookingsTable.customerID, CustomerTable.customerID))
-                .rightJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.customerID))
+                .leftJoin(CarTable as any, eq(BookingsTable.carID, CarTable.carID))
+                .leftJoin(CustomerTable as any, eq(BookingsTable.customerID, CustomerTable.customerID))
+                .leftJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.customerID))
                 .where(eq(BookingsTable.bookingID, bookingId)); 
 
         return booking || null;
@@ -38,9 +38,9 @@ export const getBookingsByCarIdService = async (carId: number) => {
 
         const bookings = await db.select()
             .from(BookingsTable)
-            .rightJoin(CarTable as any, eq(BookingsTable.carID, CarTable.carID))
-            .rightJoin(CustomerTable as any, eq(BookingsTable.customerID, CustomerTable.customerID))
-            .rightJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.customerID))
+            .leftJoin(CarTable as any, eq(BookingsTable.carID, CarTable.carID))
+            .leftJoin(CustomerTable as any, eq(BookingsTable.customerID, CustomerTable.customerID))
+            .leftJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.customerID))
             .where(eq(BookingsTable.carID, carId))
         
         ;
@@ -55,9 +55,9 @@ export const getBookingsByCustomerIdService = async (customerId: number) => {
     try {
         const bookings = await db.select()
             .from(BookingsTable)
-            .rightJoin(CarTable as any, eq(BookingsTable.carID, CarTable.carID))
-            .rightJoin(CustomerTable as any, eq(BookingsTable.customerID, CustomerTable.customerID))
-            .rightJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.customerID))
+            .leftJoin(CarTable as any, eq(BookingsTable.carID, CarTable.carID))
+            .leftJoin(CustomerTable as any, eq(BookingsTable.customerID, CustomerTable.customerID))
+            .leftJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.customerID))
             .where(eq(BookingsTable.customerID, customerId))
 
             return bookings || [];
@@ -71,9 +71,9 @@ export const getAllBookingsService = async () => {
     try {
         const bookings = await db.select()
         .from(BookingsTable)
-        .rightJoin(CarTable as any, eq(BookingsTable.carID, CarTable.carID))
-        .rightJoin(CustomerTable as any, eq(BookingsTable.customerID, CustomerTable.customerID))
-        .rightJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.customerID));
+        .leftJoin(CarTable as any, eq(BookingsTable.carID, CarTable.carID))
+        .leftJoin(CustomerTable as any, eq(BookingsTable.customerID, CustomerTable.customerID))
+        .leftJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.customerID));
 
         return bookings || [];
     } catch (error: any) {
