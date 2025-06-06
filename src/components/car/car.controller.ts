@@ -34,7 +34,8 @@ export const getCarByIdController = async(req: Request, res: Response) => {
 
         const car = await getCarByIdService(carId);
 
-        if (Array.isArray(car) && car.length > 0) {
+        if(!car)
+        {
             res.status(404).json({
                 message: `Car with ID '${carId}' not found.`,
             });

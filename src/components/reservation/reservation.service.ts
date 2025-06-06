@@ -10,21 +10,28 @@ import {
   lte,
   lt,
 } from "drizzle-orm";
-import { CustomerTable, ReservationEntity, ReservationTable, UsersTable } from "../../Drizzle/schema";
+import { CustomerTable, ReservationEntity, ReservationTable, UsersTable, CarTable } from "../../Drizzle/schema";
 import reservation from "./reservation.router";
 
 // Get reservation by customer ID
 export const getReservationByCustomerIdService = async (customerId: number) => {
-    return await db.query.ReservationTable.findMany({
-        where: eq(ReservationTable.customerID, customerId),
-    });
+    return await db.select()
+      .from(ReservationTable)
+      .rightJoin(CustomerTable as any, on => eq(CustomerTable.customerID, ReservationTable.customerID))
+      .rightJoin(UsersTable as any, on => eq(UsersTable.userID, ReservationTable.customerID))
+      .rightJoin(CarTable as any, on => eq(CarTable.carID, ReservationTable.carID))
+      .where(eq(ReservationTable.customerID, customerId));
+
 };
 
 // Get reservation by car ID
 export const getReservationByCarIdService = async (carId: number) => {
-    return await db.query.ReservationTable.findMany({
-        where: eq(ReservationTable.carID, carId),
-    });
+    return await db.select()
+      .from(ReservationTable)
+      .rightJoin(CustomerTable as any, on => eq(CustomerTable.customerID, ReservationTable.customerID))
+      .rightJoin(UsersTable as any, on => eq(UsersTable.userID, ReservationTable.customerID))
+      .rightJoin(CarTable as any, on => eq(CarTable.carID, ReservationTable.carID))
+      .where(eq(ReservationTable.carID, carId));
 };
 
 
@@ -34,6 +41,9 @@ export const getReturnedCarsService = async () => {
 
     return await db.select()
         .from(ReservationTable)
+        .rightJoin(CustomerTable as any, on => eq(CustomerTable.customerID, ReservationTable.customerID))
+        .rightJoin(UsersTable as any, on => eq(UsersTable.userID, ReservationTable.customerID))
+        .rightJoin(CarTable as any, on => eq(CarTable.carID, ReservationTable.carID))
         .where(and(isNotNull(ReservationTable.returnDate), lt(ReservationTable.returnDate, now)))
 
 };
@@ -45,6 +55,9 @@ export const getCurrentlyReservedCarsService = async () => {
   return await db
     .select()
     .from(ReservationTable)
+      .rightJoin(CustomerTable as any, on => eq(CustomerTable.customerID, ReservationTable.customerID))
+      .rightJoin(UsersTable as any, on => eq(UsersTable.userID, ReservationTable.customerID))
+      .rightJoin(CarTable as any, on => eq(CarTable.carID, ReservationTable.carID))
     .where(
       and(
         lte(ReservationTable.pickupDate, now),
@@ -70,14 +83,17 @@ export const getCurrentlyReservedCarsByCustomerService = async (customerName: st
 
 
   // Find currently reserved cars for the customer
-  return await db.query.ReservationTable.findMany({
-    where: and(
+  return await db.select()
+      .from(ReservationTable)
+      .rightJoin(CustomerTable as any, on => eq(CustomerTable.customerID, ReservationTable.customerID))
+      .rightJoin(UsersTable as any, on => eq(UsersTable.userID, ReservationTable.customerID))
+      .rightJoin(CarTable as any, on => eq(CarTable.carID, ReservationTable.carID))
+      .where(and(
       eq(ReservationTable.customerID, customer.userID),
-      // or(
-      //   isNull(ReservationTable.returnDate), // Not returned yet
-      // )
-    ),
-  });
+      or(
+        isNull(ReservationTable.returnDate), // Not returned yet
+      )
+    ));
 };
 
 

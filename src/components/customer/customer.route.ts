@@ -6,7 +6,7 @@ import { bothRoleAuth } from "../../middleware/bearAuth";
 const customerRoute = (app: Express) => {
     // Create customer
     app.route('/customers').post(
-        bothRoleAuth,
+        // bothRoleAuth,
         createCustomerController)
     
     // Get customer by email

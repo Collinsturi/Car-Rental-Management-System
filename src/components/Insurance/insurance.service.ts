@@ -1,6 +1,6 @@
 import { eq, ilike } from "drizzle-orm";
 import db from "../../Drizzle/db";
-import { InsuranceTable, InsuranceEntity } from "../../Drizzle/schema";
+import { InsuranceTable, InsuranceEntity, CarTable } from "../../Drizzle/schema";
 
 // Create insurance
 export const createInsuranceService = async (insuranceData: InsuranceEntity) => {
@@ -17,9 +17,11 @@ export const createInsuranceService = async (insuranceData: InsuranceEntity) => 
 // Get insurance by ID
 export const getInsuranceByIdService = async (insuranceId: number) => {
     try {
-        const insurance = await db.query.InsuranceTable.findFirst({
-            where: eq(InsuranceTable.insuranceID, insuranceId),
-        });
+        const insurance = await db.select()
+            .from(InsuranceTable)
+            .rightJoin(CarTable as any, on => eq(CarTable.carID, InsuranceTable.carID))
+            .where(eq(InsuranceTable.insuranceID, insuranceId));
+
         return insurance || null;
     } catch (error: any) {
         throw new Error(`Get insurance by ID error: ${error.message}`);
@@ -29,9 +31,11 @@ export const getInsuranceByIdService = async (insuranceId: number) => {
 // Get insurances by car ID
 export const getInsurancesByCarIdService = async (carId: number) => {
     try {
-        const insurances = await db.query.InsuranceTable.findMany({
-            where: eq(InsuranceTable.carID, carId),
-        });
+        const insurances = await db.select()
+            .from(InsuranceTable)
+            .rightJoin(CarTable as any, on => eq(CarTable.carID, InsuranceTable.carID))
+            .where(eq(InsuranceTable.carID, carId));
+
         return insurances || [];
     } catch (error: any) {
         throw new Error(`Get insurances by car ID error: ${error.message}`);
@@ -41,9 +45,11 @@ export const getInsurancesByCarIdService = async (carId: number) => {
 // Get insurances by provider (case-insensitive match)
 export const getInsurancesByProviderService = async (provider: string) => {
     try {
-        const insurances = await db.query.InsuranceTable.findMany({
-            where: ilike(InsuranceTable.insuranceProvider, `%${provider}%`),
-        });
+        const insurances = await db.select()
+            .from(InsuranceTable)
+            .rightJoin(CarTable as any, on => eq(CarTable.carID, InsuranceTable.carID))
+            .where(ilike(InsuranceTable.insuranceProvider, `%${provider}%`),);
+
         return insurances || [];
     } catch (error: any) {
         throw new Error(`Get insurances by provider error: ${error.message}`);
@@ -53,7 +59,10 @@ export const getInsurancesByProviderService = async (provider: string) => {
 // Get all insurances
 export const getAllInsurancesService = async () => {
     try {
-        const insurances = await db.query.InsuranceTable.findMany();
+        const insurances = await db.select()
+            .from(InsuranceTable)
+            .rightJoin(CarTable as any, on => eq(CarTable.carID, InsuranceTable.carID))
+
         return insurances || [];
     } catch (error: any) {
         throw new Error(`Get all insurances error: ${error.message}`);

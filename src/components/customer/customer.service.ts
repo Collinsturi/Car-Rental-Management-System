@@ -9,17 +9,28 @@ export const createCustomerService = async (customerData: any) => {
 
 // Get customer by email
 export const getCustomerByEmailService = async (email: string) => {
-  return await db.query.UsersTable.findFirst({
-    where: eq(UsersTable.email, email),
-  });
+  return await db.select()
+    .from(UsersTable)
+    .rightJoin(CustomerTable as any, on => eq(CustomerTable.customerID, UsersTable.userID))
+    .where(eq(UsersTable.email, email));
+
 };
 
 // Get customer by ID
 export const getCustomerByIdService = async (id: number) => {
-  return await db.query.CustomerTable.findFirst({
-    where: eq(CustomerTable.customerID, id),
-  });
+  return await db.select()
+    .from(CustomerTable)
+    .rightJoin(UsersTable as any, on => eq(CustomerTable.customerID, UsersTable.userID))
+    .where(eq(CustomerTable.customerID, id));
+
 };
+
+//Get all customers
+export const getAllCustomersService = async () => {
+  return await db.select()
+    .from(CustomerTable)
+    .rightJoin(UsersTable as any, on => eq(CustomerTable.customerID, UsersTable.userID));
+}
 
 
 // Delete customer

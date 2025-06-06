@@ -21,10 +21,11 @@ export const createCarService = async (carData: CarEntity) => {
 // Get car by ID
 export const getCarByIdService = async (id: number) => {
     try{
-        const carDetails = await db.query.CarTable.findFirst({
-            where: eq(CarTable.carID, id)
-        })
-
+        const carDetails = await db.select()
+            .from(CarTable)
+            .rightJoin(LocationTable as any, on => eq(CarTable.locationID, LocationTable.locationID))
+            .where(eq(CarTable.carID, id))
+        
         if(carDetails){
             return carDetails
         }
@@ -39,11 +40,11 @@ export const getCarByIdService = async (id: number) => {
 //Get car by car model
 export const getCarsByCarModelService = async (model: string) => {
     try{
-        const cars = await db.query.CarTable.findMany(
-            {
-              where: eq(CarTable.carModel, model)   
-            }
-        )
+        const cars = await db.select()
+            .from(CarTable)
+            .rightJoin(LocationTable as any, on => eq(CarTable.locationID, LocationTable.locationID))
+            .where(eq(CarTable.carModel, model))
+
 
         if (cars && cars.length > 0) {
             return cars;
@@ -79,9 +80,10 @@ export const getCarsByCarModelService = async (model: string) => {
 //Get All available cars
 export const getAllAvailableCarsService = async () => {
     try {
-        const cars = await db.query.CarTable.findMany({
-            where: eq(CarTable.availability, true)
-        });
+        const cars = await db.select()
+            .from(CarTable)
+            .rightJoin(LocationTable as any, on => eq(CarTable.locationID, LocationTable.locationID))
+            .where(eq(CarTable.availability, true))
 
         if(cars) return cars;
 

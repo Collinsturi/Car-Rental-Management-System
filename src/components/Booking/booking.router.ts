@@ -10,20 +10,20 @@ import { bothRoleAuth } from "../../middleware/bearAuth";
 
 const bookingRoute = (app: Express) => {
     app.route("/booking").post( 
-        bothRoleAuth,
+        // bothRoleAuth,
         createBookingController
     );               // Create booking
     app.route("/booking/:bookingId").get(
-        bothRoleAuth,
+        // bothRoleAuth,
         getBookingByIdController);    // Get booking by ID
     app.route("/booking/car/:carId").get(
-        bothRoleAuth,
+        // bothRoleAuth,
         getBookingsByCarIdController);  // Get by card ID
     app.route("/booking/customer/:customerId").get(
-        bothRoleAuth,
+        // bothRoleAuth,
         getBookingsByCustomerIdController); // Get by customer ID
     app.route("/booking").get(
-        bothRoleAuth,
+        // bothRoleAuth,
         getAllBookingsController);               // Get all bookings
 };
 

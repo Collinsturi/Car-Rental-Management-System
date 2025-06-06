@@ -12,32 +12,32 @@ import { adminRoleAuth, bothRoleAuth } from '../../middleware/bearAuth';
 const carRouter = (app: Express) => {
     // Create a car
     app.route('/cars').post(
-        adminRoleAuth,
+        // adminRoleAuth,
         createCarController);
 
     // Get car by car ID
     app.route('/cars/find/:carId').get(
-        bothRoleAuth,
+        // bothRoleAuth,
         getCarByIdController);
 
     // Get car by model
     app.route('/cars/model/:model').get(
-        bothRoleAuth,
+        // bothRoleAuth,
         getCarByModel);
 
     // Get all available cars
     app.route('/cars/available').get(
-        bothRoleAuth,
+        // bothRoleAuth,
         getAllAvailableCars);
 
     // Get all cars in a certain location
     app.route('/cars/location/:location').get(
-        bothRoleAuth,
+        // bothRoleAuth,
         getCarsByLocation);
 
 
     app.route('/cars/').patch(
-        adminRoleAuth,
+        // adminRoleAuth,
         updateCarsController
     )
 };
