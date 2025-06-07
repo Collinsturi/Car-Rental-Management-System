@@ -19,7 +19,7 @@ export const getInsuranceByIdService = async (insuranceId: number) => {
     try {
         const insurance = await db.select()
             .from(InsuranceTable)
-            .rightJoin(CarTable as any, on => eq(CarTable.carID, InsuranceTable.carID))
+            .leftJoin(CarTable as any, on => eq(CarTable.carID, InsuranceTable.carID))
             .where(eq(InsuranceTable.insuranceID, insuranceId));
 
         return insurance || null;
@@ -33,7 +33,7 @@ export const getInsurancesByCarIdService = async (carId: number) => {
     try {
         const insurances = await db.select()
             .from(InsuranceTable)
-            .rightJoin(CarTable as any, on => eq(CarTable.carID, InsuranceTable.carID))
+            .leftJoin(CarTable as any, on => eq(CarTable.carID, InsuranceTable.carID))
             .where(eq(InsuranceTable.carID, carId));
 
         return insurances || [];
@@ -47,7 +47,7 @@ export const getInsurancesByProviderService = async (provider: string) => {
     try {
         const insurances = await db.select()
             .from(InsuranceTable)
-            .rightJoin(CarTable as any, on => eq(CarTable.carID, InsuranceTable.carID))
+            .leftJoin(CarTable as any, on => eq(CarTable.carID, InsuranceTable.carID))
             .where(ilike(InsuranceTable.insuranceProvider, `%${provider}%`),);
 
         return insurances || [];
@@ -61,7 +61,7 @@ export const getAllInsurancesService = async () => {
     try {
         const insurances = await db.select()
             .from(InsuranceTable)
-            .rightJoin(CarTable as any, on => eq(CarTable.carID, InsuranceTable.carID))
+            .leftJoin(CarTable as any, on => eq(CarTable.carID, InsuranceTable.carID))
 
         return insurances || [];
     } catch (error: any) {

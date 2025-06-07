@@ -14,7 +14,7 @@ export const getMaintenanceByIdService = async (maintenanceId: number) => {
     try {
         const maintenance = await db.select()
             .from(MaintenanceTable)
-            .rightJoin(CarTable as any, on => eq(CarTable.carID, MaintenanceTable.carID))
+            .leftJoin(CarTable as any, on => eq(CarTable.carID, MaintenanceTable.carID))
             .where(eq(MaintenanceTable.maintenanceID, maintenanceId));
 
         return maintenance || null;
@@ -28,7 +28,7 @@ export const getMaintenanceByCarIdService = async (carId: number) => {
     try {
         const maintenances = await db.select()
             .from(MaintenanceTable)
-            .rightJoin(CarTable as any, on => eq(CarTable.carID, MaintenanceTable.carID))
+            .leftJoin(CarTable as any, on => eq(CarTable.carID, MaintenanceTable.carID))
             .where(eq(MaintenanceTable.carID, carId));
             
         return maintenances || [];
