@@ -1,5 +1,5 @@
 
-import { relations } from "drizzle-orm";
+import { relations } from "drizzle-orm/relations";
 import { text, varchar, serial, pgTable, decimal, integer, boolean, date, pgEnum } from "drizzle-orm/pg-core";
 
 //For version 2 of the schema I migrated the Common user attributes from the Customer's table 

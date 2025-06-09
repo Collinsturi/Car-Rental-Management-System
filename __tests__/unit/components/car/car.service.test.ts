@@ -627,7 +627,7 @@ describe("Car Service", () => {
     });
 
     it("should handle database timeout scenarios", async () => {
-      jest.setTimeout(10000); // Increase timeout for this test
+      jest.setTimeout(10000); //Ensure test timeout to be about 13s
       
       const mockWhere = jest.fn().mockImplementation(() => {
         return new Promise((_, reject) => {

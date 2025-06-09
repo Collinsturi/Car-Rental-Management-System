@@ -5,11 +5,11 @@ const config: Config = {
   testEnvironment: "node",
   verbose: true,
   testTimeout: 30000,
-  //  collectCoverage: true, //collect coverage information
-  //   coverageDirectory: 'coverage', //directory where Jest should output its coverage files
-  //   collectCoverageFrom: [
-  //       '<rootDir>/src/**/*.ts', //collect coverage from all TypeScript files in the src directory
-  //   ]
+   collectCoverage: true, //collect coverage information
+    coverageDirectory: 'coverage', //directory where Jest should output its coverage files
+    collectCoverageFrom: [
+        '<rootDir>/src/**/*.ts', //collect coverage from all TypeScript files in the src directory
+    ]
 };
 
 export default config;
