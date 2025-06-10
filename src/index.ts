@@ -24,6 +24,8 @@ const initializeApp = () => {
     maintenanceRouter(app)
     insuranceRoute(app);
     userRoute(app);
+
+    return app;
 }
 
 const app = initializeApp();

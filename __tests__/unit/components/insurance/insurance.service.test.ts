@@ -6,7 +6,7 @@ import {
   getAllInsurancesService,
 } from '../../../../src/components/Insurance/insurance.service'; // Adjust the import path as needed
 
-import db from '../../../../src/Drizzle/db';
+import db, { client } from '../../../../src/Drizzle/db';
 import { eq, ilike } from 'drizzle-orm';
 import { InsuranceTable, InsuranceEntity, CarTable } from '../../../../src/Drizzle/schema';
 
@@ -594,5 +594,5 @@ beforeEach(() => {
 //   });
 
   afterAll(async () => {
-    
+    client.end()
   });
