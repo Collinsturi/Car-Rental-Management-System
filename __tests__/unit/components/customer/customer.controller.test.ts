@@ -6,7 +6,7 @@ import {
   deleteCustomerController
 } from '../../../../src/components/Customer/customer.controller';
 
-import * as customerService from '../../../../src/components/Customer/customer.controller';
+import * as customerService from '../../../../src/components/Customer/customer.service';
 import { Request, Response } from 'express';
 
 describe('Customer Controller', () => {

@@ -11,7 +11,7 @@
     "migrate": "tsx src/drizzle/migrate.ts",
     "studio": "drizzle-kit studio",
     "push": " drizzle-kit generate && tsx ./src/drizzle/migrate.ts",
-    "test": "jest --detectOpenHandles"
+    "test": "jest --detectOpenHandles --watchAll"
   },
   "keywords": [],
   "author": "",

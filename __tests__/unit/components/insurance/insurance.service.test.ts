@@ -86,6 +86,7 @@ describe('Insurance Service', () => {
   afterAll(async () => {
     // Prevent Jest open handle error by ensuring all microtasks resolve
     await new Promise(resolve => setTimeout(resolve, 0));
+        await db.$client.end()
   });
 
   describe('createInsuranceService', () => {
@@ -592,7 +593,3 @@ beforeEach(() => {
 //       expect(results[2]).toEqual([sampleInsuranceWithCar]);
 //     });
 //   });
-
-  afterAll(async () => {
-    client.end()
-  });

@@ -1,206 +1,291 @@
-import { eq } from 'drizzle-orm';
+import { createMaintenanceService, getMaintenanceByIdService, getMaintenanceByCarIdService } from '../../../../src/components/maintainance/maintainance.service';
 import db from '../../../../src/Drizzle/db';
-import { CarTable, MaintenanceTable, MaintenanceEntity } from '../../../../src/Drizzle/schema';
-import {
-    createMaintenanceService,
-    getMaintenanceByIdService,
-    getMaintenanceByCarIdService
-} from '../../../../src/components/maintainance/maintainance.service';
+import { MaintenanceTable, CarTable } from '../../../../src/Drizzle/schema';
+import { eq } from 'drizzle-orm';
 
-// Mocks
-jest.mock('../../../../src/Drizzle/db', () => {
-    const selectChain = {
-        from: jest.fn().mockReturnThis(),
-        leftJoin: jest.fn().mockReturnThis(),
-        where: jest.fn()
-    };
-
-    const insertChain = {
-        values: jest.fn().mockReturnThis(),
-        returning: jest.fn()
-    };
-
-    return {
-        default: {
-            select: jest.fn(() => selectChain),
-            insert: jest.fn(() => insertChain)
-        }
-    };
-});
-
+// Mock the database and drizzle-orm
+jest.mock('../../../../src/Drizzle/db');
 jest.mock('drizzle-orm', () => ({
-    eq: jest.fn(() => 'mocked-eq-condition')
+  eq: jest.fn()
+}));
+
+// Mock the schema tables
+jest.mock('../../../../src/Drizzle/schema', () => ({
+  MaintenanceTable: {
+    maintenanceID: 'maintenanceID',
+    carID: 'carID'
+  },
+  CarTable: {
+    carID: 'carID'
+  }
 }));
 
 describe('Maintenance Service', () => {
-    const mockDb = db as any;
-    const mockEq = eq as jest.Mock;
+  const mockDb = db as jest.Mocked<typeof db>;
+  const mockEq = eq as jest.MockedFunction<typeof eq>;
 
-    const selectChain = mockDb.select();
-    const insertChain = mockDb.insert();
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-    beforeEach(() => {
-        jest.clearAllMocks();
+  describe('createMaintenanceService', () => {
+    it('should create a new maintenance record successfully', async () => {
+      // Arrange
+      const mockMaintenance = {
+        maintenanceID: 1,
+        carID: 1,
+        serviceType: 'Oil Change',
+        serviceDate: new Date('2024-01-15'),
+        cost: 50.00,
+        description: 'Regular oil change service'
+      };
+
+      const mockReturning = jest.fn().mockResolvedValue([mockMaintenance]);
+      const mockValues = jest.fn().mockReturnValue({ returning: mockReturning });
+      const mockInsert = jest.fn().mockReturnValue({ values: mockValues });
+      
+      mockDb.insert = mockInsert;
+
+      // Act
+      const result = await createMaintenanceService(mockMaintenance);
+
+      // Assert
+      expect(mockDb.insert).toHaveBeenCalledWith(MaintenanceTable);
+      expect(mockValues).toHaveBeenCalledWith(mockMaintenance);
+      expect(mockReturning).toHaveBeenCalled();
+      expect(result).toEqual([mockMaintenance]);
     });
 
-    describe('createMaintenanceService', () => {
-        it('should create a new maintenance record successfully', async () => {
-            const mockMaintenance: MaintenanceEntity = {
-                maintenanceID: 1,
-                carID: 1,
-                maintenanceDate: '2024-01-15',
-                description: 'Oil change',
-                cost: '100.00'
-            };
+    it('should handle database errors during creation', async () => {
+      // Arrange
+      const mockMaintenance = {
+        maintenanceID: 1,
+        carID: 1,
+        serviceType: 'Oil Change',
+        serviceDate: new Date('2024-01-15'),
+        cost: 50.00,
+        description: 'Regular oil change service'
+      };
 
-            insertChain.returning.mockResolvedValue([mockMaintenance]);
+      const mockReturning = jest.fn().mockRejectedValue(new Error('Database connection failed'));
+      const mockValues = jest.fn().mockReturnValue({ returning: mockReturning });
+      const mockInsert = jest.fn().mockReturnValue({ values: mockValues });
+      
+      mockDb.insert = mockInsert;
 
-            const result = await createMaintenanceService(mockMaintenance);
+      // Act & Assert
+      await expect(createMaintenanceService(mockMaintenance)).rejects.toThrow('Database connection failed');
+    });
+  });
 
-            expect(mockDb.insert).toHaveBeenCalledWith(MaintenanceTable);
-            expect(insertChain.values).toHaveBeenCalledWith(mockMaintenance);
-            expect(insertChain.returning).toHaveBeenCalled();
-            expect(result).toEqual([mockMaintenance]);
-        });
+  describe('getMaintenanceByIdService', () => {
+    it('should return maintenance record with car details when found', async () => {
+      // Arrange
+      const maintenanceId = 1;
+      const mockMaintenanceWithCar = [{
+        maintenance: {
+          maintenanceID: 1,
+          carID: 1,
+          serviceType: 'Oil Change',
+          serviceDate: new Date('2024-01-15'),
+          cost: 50.00,
+          description: 'Regular oil change service'
+        },
+        car: {
+          carID: 1,
+          make: 'Toyota',
+          model: 'Camry',
+          year: 2020
+        }
+      }];
 
-        it('should throw on insert error', async () => {
-            const error = new Error('DB failure');
-            insertChain.returning.mockRejectedValue(error);
+      const mockWhere = jest.fn().mockResolvedValue(mockMaintenanceWithCar);
+      const mockLeftJoin = jest.fn().mockReturnValue({ where: mockWhere });
+      const mockFrom = jest.fn().mockReturnValue({ leftJoin: mockLeftJoin });
+      const mockSelect = jest.fn().mockReturnValue({ from: mockFrom });
+      
+      mockDb.select = mockSelect;
+      mockEq.mockReturnValue('eq_condition' as any);
 
-            await expect(createMaintenanceService({
-                maintenanceID: 1,
-                carID: 1,
-                maintenanceDate: '2024-01-15',
-                description: 'Test',
-                cost: '0'
-            })).rejects.toThrow('DB failure');
-        });
+      // Act
+      const result = await getMaintenanceByIdService(maintenanceId);
+
+      // Assert
+      expect(mockDb.select).toHaveBeenCalled();
+      expect(mockFrom).toHaveBeenCalledWith(MaintenanceTable);
+      expect(mockLeftJoin).toHaveBeenCalled();
+      expect(mockEq).toHaveBeenCalledWith(MaintenanceTable.maintenanceID, maintenanceId);
+      expect(mockWhere).toHaveBeenCalledWith('eq_condition');
+      expect(result).toEqual(mockMaintenanceWithCar);
     });
 
-    describe('getMaintenanceByIdService', () => {
-        it('should return maintenance with car info', async () => {
-            const data = [{
-                maintenance: {
-                    maintenanceID: 1,
-                    carID: 1,
-                    maintenanceDate: new Date('2024-01-15'),
-                    description: 'Checkup',
-                    cost: '80'
-                },
-                car: {
-                    carID: 1,
-                    carModel: 'Tesla',
-                    year: new Date('2022-01-01'),
-                    color: 'White',
-                    rentalRate: '100',
-                    availability: true,
-                    locationID: 1
-                }
-            }];
+    it('should return null when maintenance record is not found', async () => {
+      // Arrange
+      const maintenanceId = 999;
+      
+      const mockWhere = jest.fn().mockResolvedValue(null);
+      const mockLeftJoin = jest.fn().mockReturnValue({ where: mockWhere });
+      const mockFrom = jest.fn().mockReturnValue({ leftJoin: mockLeftJoin });
+      const mockSelect = jest.fn().mockReturnValue({ from: mockFrom });
+      
+      mockDb.select = mockSelect;
+      mockEq.mockReturnValue('eq_condition' as any);
 
-            selectChain.where.mockResolvedValue(data);
+      // Act
+      const result = await getMaintenanceByIdService(maintenanceId);
 
-            const result = await getMaintenanceByIdService(1);
-            expect(result).toEqual(data);
-        });
-
-        it('should return null if not found', async () => {
-            selectChain.where.mockResolvedValue(null);
-
-            const result = await getMaintenanceByIdService(999);
-            expect(result).toBeNull();
-        });
-
-        it('should handle DB error', async () => {
-            const error = new Error('Timeout');
-            selectChain.where.mockRejectedValue(error);
-
-            await expect(getMaintenanceByIdService(1))
-                .rejects.toThrow('Get maintenance by ID error: Timeout');
-        });
+      // Assert
+      expect(result).toBeNull();
     });
 
-    describe('getMaintenanceByCarIdService', () => {
-        it('should return multiple records', async () => {
-            const records = [
-                {
-                    maintenance: {
-                        maintenanceID: 1,
-                        carID: 1,
-                        maintenanceDate: new Date(),
-                        description: 'X',
-                        cost: '10'
-                    },
-                    car: {
-                        carID: 1,
-                        carModel: 'X',
-                        year: new Date(),
-                        color: 'Red',
-                        rentalRate: '100',
-                        availability: true,
-                        locationID: 1
-                    }
-                }
-            ];
+    it('should throw an error when database operation fails', async () => {
+      // Arrange
+      const maintenanceId = 1;
+      const dbError = new Error('Connection timeout');
+      
+      const mockWhere = jest.fn().mockRejectedValue(dbError);
+      const mockLeftJoin = jest.fn().mockReturnValue({ where: mockWhere });
+      const mockFrom = jest.fn().mockReturnValue({ leftJoin: mockLeftJoin });
+      const mockSelect = jest.fn().mockReturnValue({ from: mockFrom });
+      
+      mockDb.select = mockSelect;
+      mockEq.mockReturnValue('eq_condition' as any);
 
-            selectChain.where.mockResolvedValue(records);
+      // Act & Assert
+      await expect(getMaintenanceByIdService(maintenanceId)).rejects.toThrow('Get maintenance by ID error: Connection timeout');
+    });
+  });
 
-            const result = await getMaintenanceByCarIdService(1);
-            expect(result).toEqual(records);
-        });
+  describe('getMaintenanceByCarIdService', () => {
+    it('should return maintenance records for a specific car', async () => {
+      // Arrange
+      const carId = 1;
+      const mockMaintenanceRecords = [
+        {
+          maintenance: {
+            maintenanceID: 1,
+            carID: 1,
+            serviceType: 'Oil Change',
+            serviceDate: new Date('2024-01-15'),
+            cost: 50.00,
+            description: 'Regular oil change service'
+          },
+          car: {
+            carID: 1,
+            make: 'Toyota',
+            model: 'Camry',
+            year: 2020
+          }
+        },
+        {
+          maintenance: {
+            maintenanceID: 2,
+            carID: 1,
+            serviceType: 'Tire Rotation',
+            serviceDate: new Date('2024-02-20'),
+            cost: 30.00,
+            description: 'Tire rotation and inspection'
+          },
+          car: {
+            carID: 1,
+            make: 'Toyota',
+            model: 'Camry',
+            year: 2020
+          }
+        }
+      ];
 
-        it('should return [] if null', async () => {
-            selectChain.where.mockResolvedValue(null);
+      const mockWhere = jest.fn().mockResolvedValue(mockMaintenanceRecords);
+      const mockLeftJoin = jest.fn().mockReturnValue({ where: mockWhere });
+      const mockFrom = jest.fn().mockReturnValue({ leftJoin: mockLeftJoin });
+      const mockSelect = jest.fn().mockReturnValue({ from: mockFrom });
+      
+      mockDb.select = mockSelect;
+      mockEq.mockReturnValue('eq_condition' as any);
 
-            const result = await getMaintenanceByCarIdService(1);
-            expect(result).toEqual([]);
-        });
+      // Act
+      const result = await getMaintenanceByCarIdService(carId);
 
-        it('should return [] if []', async () => {
-            selectChain.where.mockResolvedValue([]);
-
-            const result = await getMaintenanceByCarIdService(1);
-            expect(result).toEqual([]);
-        });
-
-        it('should throw DB error', async () => {
-            const error = new Error('DB fail');
-            selectChain.where.mockRejectedValue(error);
-
-            await expect(getMaintenanceByCarIdService(1))
-                .rejects.toThrow('Get maintenance by car ID error: DB fail');
-        });
+      // Assert
+      expect(mockDb.select).toHaveBeenCalled();
+      expect(mockFrom).toHaveBeenCalledWith(MaintenanceTable);
+      expect(mockLeftJoin).toHaveBeenCalled();
+      expect(mockEq).toHaveBeenCalledWith(MaintenanceTable.carID, carId);
+      expect(mockWhere).toHaveBeenCalledWith('eq_condition');
+      expect(result).toEqual(mockMaintenanceRecords);
     });
 
-    describe('Edge cases', () => {
-        it('should create record with null cost', async () => {
-            const mockMaintenance = {
-                maintenanceID: 2,
-                carID: 1,
-                maintenanceDate: '2024-02-01',
-                description: 'Test',
-                cost: null
-            };
+    it('should return empty array when no maintenance records found for car', async () => {
+      // Arrange
+      const carId = 999;
+      
+      const mockWhere = jest.fn().mockResolvedValue(null);
+      const mockLeftJoin = jest.fn().mockReturnValue({ where: mockWhere });
+      const mockFrom = jest.fn().mockReturnValue({ leftJoin: mockLeftJoin });
+      const mockSelect = jest.fn().mockReturnValue({ from: mockFrom });
+      
+      mockDb.select = mockSelect;
+      mockEq.mockReturnValue('eq_condition' as any);
 
-            insertChain.returning.mockResolvedValue([mockMaintenance]);
+      // Act
+      const result = await getMaintenanceByCarIdService(carId);
 
-            const result = await createMaintenanceService(mockMaintenance as MaintenanceEntity);
-            expect(result[0].cost).toBeNull();
-        });
-
-        it('should create record with null description', async () => {
-            const mockMaintenance = {
-                maintenanceID: 3,
-                carID: 1,
-                maintenanceDate: '2024-02-01',
-                description: null,
-                cost: '50'
-            };
-
-            insertChain.returning.mockResolvedValue([mockMaintenance]);
-
-            const result = await createMaintenanceService(mockMaintenance as MaintenanceEntity);
-            expect(result[0].description).toBeNull();
-        });
+      // Assert
+      expect(result).toEqual([]);
     });
+
+    it('should throw an error when database operation fails', async () => {
+      // Arrange
+      const carId = 1;
+      const dbError = new Error('Database timeout');
+      
+      const mockWhere = jest.fn().mockRejectedValue(dbError);
+      const mockLeftJoin = jest.fn().mockReturnValue({ where: mockWhere });
+      const mockFrom = jest.fn().mockReturnValue({ leftJoin: mockLeftJoin });
+      const mockSelect = jest.fn().mockReturnValue({ from: mockFrom });
+      
+      mockDb.select = mockSelect;
+      mockEq.mockReturnValue('eq_condition' as any);
+
+      // Act & Assert
+      await expect(getMaintenanceByCarIdService(carId)).rejects.toThrow('Get maintenance by car ID error: Database timeout');
+    });
+  });
+});
+
+// Additional integration-style tests (optional)
+describe('Maintenance Service Integration Tests', () => {
+  // These tests would run against a test database
+  // Uncomment and modify based on your test setup
+  
+  /*
+  beforeAll(async () => {
+    // Setup test database
+  });
+
+  afterAll(async () => {
+    // Cleanup test database
+  });
+
+  beforeEach(async () => {
+    // Clear test data
+  });
+
+  it('should create and retrieve maintenance record', async () => {
+    // Integration test example
+    const newMaintenance = {
+      carID: 1,
+      serviceType: 'Oil Change',
+      serviceDate: new Date('2024-01-15'),
+      cost: 50.00,
+      description: 'Regular oil change service'
+    };
+
+    const created = await createMaintenanceService(newMaintenance);
+    const retrieved = await getMaintenanceByIdService(created[0].maintenanceID);
+    
+    expect(retrieved).toBeTruthy();
+    expect(retrieved[0].maintenance.serviceType).toBe(newMaintenance.serviceType);
+  });
+  */
 });

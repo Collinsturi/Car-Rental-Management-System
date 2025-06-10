@@ -1,6 +1,4 @@
 import { eq, and, or, isNull, isNotNull, gt, gte, lte, lt } from 'drizzle-orm';
-import { relations } from "drizzle-orm/relations";
-
 import db from '../../../../src/Drizzle/db';
 import { CustomerTable, ReservationTable, UsersTable, CarTable } from '../../../../src/Drizzle/schema';
 import {
@@ -38,26 +36,41 @@ const mockGt = gt as jest.MockedFunction<typeof gt>;
 const mockLte = lte as jest.MockedFunction<typeof lte>;
 const mockLt = lt as jest.MockedFunction<typeof lt>;
 
-// Mock Date
+// Mock Date.prototype.toISOString
 const mockDate = '2024-01-15';
-jest.spyOn(Date.prototype, 'toISOString').mockReturnValue(`${mockDate}T10:30:00.000Z`);
+const originalDate = Date;
+const mockToISOString = jest.fn().mockReturnValue(`${mockDate}T10:30:00.000Z`);
+
+// Mock console.log to avoid output during tests
+const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
 
 describe('Reservation Service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Setup default mock returns
-    mockEq.mockReturnValue({} as any);
-    mockAnd.mockReturnValue({} as any);
-    mockOr.mockReturnValue({} as any);
-    mockIsNull.mockReturnValue({} as any);
-    mockIsNotNull.mockReturnValue({} as any);
-    mockGt.mockReturnValue({} as any);
-    mockLte.mockReturnValue({} as any);
-    mockLt.mockReturnValue({} as any);
+    // Setup default mock returns for drizzle-orm functions
+    mockEq.mockReturnValue('eq_condition' as any);
+    mockAnd.mockReturnValue('and_condition' as any);
+    mockOr.mockReturnValue('or_condition' as any);
+    mockIsNull.mockReturnValue('isNull_condition' as any);
+    mockIsNotNull.mockReturnValue('isNotNull_condition' as any);
+    mockGt.mockReturnValue('gt_condition' as any);
+    mockLte.mockReturnValue('lte_condition' as any);
+    mockLt.mockReturnValue('lt_condition' as any);
+
+    // Mock Date constructor and prototype
+    global.Date = jest.fn().mockImplementation(() => ({
+      toISOString: mockToISOString
+    })) as any;
+    global.Date.prototype.toISOString = mockToISOString;
   });
 
   afterEach(() => {
     jest.resetAllMocks();
+    global.Date = originalDate;
+  });
+
+  afterAll(() => {
+    mockConsoleLog.mockRestore();
   });
 
   const mockReservationData = [
@@ -111,7 +124,7 @@ describe('Reservation Service', () => {
       expect(mockDb.select).toHaveBeenCalled();
       expect(mockSelect.from).toHaveBeenCalledWith(ReservationTable);
       expect(mockSelect.rightJoin).toHaveBeenCalledTimes(3);
-      expect(mockSelect.where).toHaveBeenCalled();
+      expect(mockSelect.where).toHaveBeenCalledWith('eq_condition');
       expect(mockEq).toHaveBeenCalledWith(ReservationTable.customerID, customerId);
       expect(result).toEqual(mockReservationData);
     });
@@ -151,6 +164,46 @@ describe('Reservation Service', () => {
       // Act & Assert
       await expect(getReservationByCustomerIdService(customerId)).rejects.toThrow('Database connection failed');
     });
+
+    it('should handle zero customer ID', async () => {
+      // Arrange
+      const customerId = 0;
+      
+      const mockSelect = {
+        from: jest.fn().mockReturnThis(),
+        rightJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([])
+      };
+
+      mockDb.select = jest.fn().mockReturnValue(mockSelect);
+
+      // Act
+      const result = await getReservationByCustomerIdService(customerId);
+
+      // Assert
+      expect(mockEq).toHaveBeenCalledWith(ReservationTable.customerID, 0);
+      expect(result).toEqual([]);
+    });
+
+    it('should handle negative customer ID', async () => {
+      // Arrange
+      const customerId = -1;
+      
+      const mockSelect = {
+        from: jest.fn().mockReturnThis(),
+        rightJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([])
+      };
+
+      mockDb.select = jest.fn().mockReturnValue(mockSelect);
+
+      // Act
+      const result = await getReservationByCustomerIdService(customerId);
+
+      // Assert
+      expect(mockEq).toHaveBeenCalledWith(ReservationTable.customerID, -1);
+      expect(result).toEqual([]);
+    });
   });
 
   describe('getReservationByCarIdService', () => {
@@ -173,7 +226,7 @@ describe('Reservation Service', () => {
       expect(mockDb.select).toHaveBeenCalled();
       expect(mockSelect.from).toHaveBeenCalledWith(ReservationTable);
       expect(mockSelect.rightJoin).toHaveBeenCalledTimes(3);
-      expect(mockSelect.where).toHaveBeenCalled();
+      expect(mockSelect.where).toHaveBeenCalledWith('eq_condition');
       expect(mockEq).toHaveBeenCalledWith(ReservationTable.carID, carId);
       expect(result).toEqual(mockReservationData);
     });
@@ -194,6 +247,63 @@ describe('Reservation Service', () => {
       const result = await getReservationByCarIdService(carId);
 
       // Assert
+      expect(result).toEqual([]);
+    });
+
+    it('should handle database errors', async () => {
+      // Arrange
+      const carId = 1;
+      const dbError = new Error('Database timeout');
+      
+      const mockSelect = {
+        from: jest.fn().mockReturnThis(),
+        rightJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockRejectedValue(dbError)
+      };
+
+      mockDb.select = jest.fn().mockReturnValue(mockSelect);
+
+      // Act & Assert
+      await expect(getReservationByCarIdService(carId)).rejects.toThrow('Database timeout');
+    });
+
+    it('should handle zero car ID', async () => {
+      // Arrange
+      const carId = 0;
+      
+      const mockSelect = {
+        from: jest.fn().mockReturnThis(),
+        rightJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([])
+      };
+
+      mockDb.select = jest.fn().mockReturnValue(mockSelect);
+
+      // Act
+      const result = await getReservationByCarIdService(carId);
+
+      // Assert
+      expect(mockEq).toHaveBeenCalledWith(ReservationTable.carID, 0);
+      expect(result).toEqual([]);
+    });
+
+    it('should handle negative car ID', async () => {
+      // Arrange
+      const carId = -1;
+      
+      const mockSelect = {
+        from: jest.fn().mockReturnThis(),
+        rightJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([])
+      };
+
+      mockDb.select = jest.fn().mockReturnValue(mockSelect);
+
+      // Act
+      const result = await getReservationByCarIdService(carId);
+
+      // Assert
+      expect(mockEq).toHaveBeenCalledWith(ReservationTable.carID, -1);
       expect(result).toEqual([]);
     });
   });
@@ -226,8 +336,8 @@ describe('Reservation Service', () => {
   //     expect(mockDb.select).toHaveBeenCalled();
   //     expect(mockSelect.from).toHaveBeenCalledWith(ReservationTable);
   //     expect(mockSelect.rightJoin).toHaveBeenCalledTimes(3);
-  //     expect(mockSelect.where).toHaveBeenCalled();
-  //     expect(mockAnd).toHaveBeenCalled();
+  //     expect(mockSelect.where).toHaveBeenCalledWith('and_condition');
+  //     expect(mockAnd).toHaveBeenCalledWith('isNotNull_condition', 'lt_condition');
   //     expect(mockIsNotNull).toHaveBeenCalledWith(ReservationTable.returnDate);
   //     expect(mockLt).toHaveBeenCalledWith(ReservationTable.returnDate, mockDate);
   //     expect(result).toEqual(returnedCarsData);
@@ -248,6 +358,40 @@ describe('Reservation Service', () => {
 
   //     // Assert
   //     expect(result).toEqual([]);
+  //   });
+
+  //   it('should handle database errors', async () => {
+  //     // Arrange
+  //     const dbError = new Error('Query failed');
+      
+  //     const mockSelect = {
+  //       from: jest.fn().mockReturnThis(),
+  //       rightJoin: jest.fn().mockReturnThis(),
+  //       where: jest.fn().mockRejectedValue(dbError)
+  //     };
+
+  //     mockDb.select = jest.fn().mockReturnValue(mockSelect);
+
+  //     // Act & Assert
+  //     await expect(getReturnedCarsService()).rejects.toThrow('Query failed');
+  //   });
+
+  //   it('should use current date for comparison', async () => {
+  //     // Arrange
+  //     const mockSelect = {
+  //       from: jest.fn().mockReturnThis(),
+  //       rightJoin: jest.fn().mockReturnThis(),
+  //       where: jest.fn().mockResolvedValue([])
+  //     };
+
+  //     mockDb.select = jest.fn().mockReturnValue(mockSelect);
+
+  //     // Act
+  //     await getReturnedCarsService();
+
+  //     // Assert
+  //     expect(mockToISOString).toHaveBeenCalled();
+  //     expect(mockLt).toHaveBeenCalledWith(ReservationTable.returnDate, mockDate);
   //   });
   // });
 
@@ -280,10 +424,10 @@ describe('Reservation Service', () => {
   //     expect(mockDb.select).toHaveBeenCalled();
   //     expect(mockSelect.from).toHaveBeenCalledWith(ReservationTable);
   //     expect(mockSelect.rightJoin).toHaveBeenCalledTimes(3);
-  //     expect(mockSelect.where).toHaveBeenCalled();
-  //     expect(mockAnd).toHaveBeenCalled();
+  //     expect(mockSelect.where).toHaveBeenCalledWith('and_condition');
+  //     expect(mockAnd).toHaveBeenCalledWith('lte_condition', 'or_condition');
   //     expect(mockLte).toHaveBeenCalledWith(ReservationTable.pickupDate, mockDate);
-  //     expect(mockOr).toHaveBeenCalled();
+  //     expect(mockOr).toHaveBeenCalledWith('isNull_condition', 'gt_condition');
   //     expect(mockIsNull).toHaveBeenCalledWith(ReservationTable.returnDate);
   //     expect(mockGt).toHaveBeenCalledWith(ReservationTable.returnDate, mockDate);
   //     expect(result).toEqual(currentlyReservedData);
@@ -304,6 +448,41 @@ describe('Reservation Service', () => {
 
   //     // Assert
   //     expect(result).toEqual([]);
+  //   });
+
+  //   it('should handle database errors', async () => {
+  //     // Arrange
+  //     const dbError = new Error('Connection lost');
+      
+  //     const mockSelect = {
+  //       from: jest.fn().mockReturnThis(),
+  //       rightJoin: jest.fn().mockReturnThis(),
+  //       where: jest.fn().mockRejectedValue(dbError)
+  //     };
+
+  //     mockDb.select = jest.fn().mockReturnValue(mockSelect);
+
+  //     // Act & Assert
+  //     await expect(getCurrentlyReservedCarsService()).rejects.toThrow('Connection lost');
+  //   });
+
+  //   it('should use current date for comparison', async () => {
+  //     // Arrange
+  //     const mockSelect = {
+  //       from: jest.fn().mockReturnThis(),
+  //       rightJoin: jest.fn().mockReturnThis(),
+  //       where: jest.fn().mockResolvedValue([])
+  //     };
+
+  //     mockDb.select = jest.fn().mockReturnValue(mockSelect);
+
+  //     // Act
+  //     await getCurrentlyReservedCarsService();
+
+  //     // Assert
+  //     expect(mockToISOString).toHaveBeenCalled();
+  //     expect(mockLte).toHaveBeenCalledWith(ReservationTable.pickupDate, mockDate);
+  //     expect(mockGt).toHaveBeenCalledWith(ReservationTable.returnDate, mockDate);
   //   });
   // });
 
@@ -338,15 +517,18 @@ describe('Reservation Service', () => {
       const result = await getCurrentlyReservedCarsByCustomerService(customerName);
 
       // Assert
-      expect(mockQuery.UsersTable.findFirst).toHaveBeenCalled();
+      expect(mockConsoleLog).toHaveBeenCalledWith(mockCustomer);
+      expect(mockQuery.UsersTable.findFirst).toHaveBeenCalledWith({
+        where: 'eq_condition'
+      });
       expect(mockEq).toHaveBeenCalledWith(UsersTable.firstName, customerName);
       expect(mockDb.select).toHaveBeenCalled();
       expect(mockSelect.from).toHaveBeenCalledWith(ReservationTable);
       expect(mockSelect.rightJoin).toHaveBeenCalledTimes(3);
-      expect(mockSelect.where).toHaveBeenCalled();
-      expect(mockAnd).toHaveBeenCalled();
+      expect(mockSelect.where).toHaveBeenCalledWith('and_condition');
+      expect(mockAnd).toHaveBeenCalledWith('eq_condition', 'or_condition');
       expect(mockEq).toHaveBeenCalledWith(ReservationTable.customerID, mockCustomer.userID);
-      expect(mockOr).toHaveBeenCalled();
+      expect(mockOr).toHaveBeenCalledWith('isNull_condition');
       expect(mockIsNull).toHaveBeenCalledWith(ReservationTable.returnDate);
       expect(result).toEqual(mockReservationData);
     });
@@ -367,7 +549,9 @@ describe('Reservation Service', () => {
       await expect(getCurrentlyReservedCarsByCustomerService(customerName))
         .rejects.toThrow('Customer not found');
 
-      expect(mockQuery.UsersTable.findFirst).toHaveBeenCalled();
+      expect(mockQuery.UsersTable.findFirst).toHaveBeenCalledWith({
+        where: 'eq_condition'
+      });
       expect(mockEq).toHaveBeenCalledWith(UsersTable.firstName, customerName);
     });
 
@@ -387,6 +571,108 @@ describe('Reservation Service', () => {
       // Act & Assert
       await expect(getCurrentlyReservedCarsByCustomerService(customerName))
         .rejects.toThrow('Database query failed');
+    });
+
+    it('should handle database errors when getting reservations', async () => {
+      // Arrange
+      const customerName = 'John';
+      const mockCustomer = {
+        userID: 1,
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com'
+      };
+
+      const mockQuery = {
+        UsersTable: {
+          findFirst: jest.fn().mockResolvedValue(mockCustomer)
+        }
+      };
+
+      mockDb.query = mockQuery as any;
+
+      const mockSelect = {
+        from: jest.fn().mockReturnThis(),
+        rightJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockRejectedValue(new Error('Reservation query failed'))
+      };
+
+      mockDb.select = jest.fn().mockReturnValue(mockSelect);
+
+      // Act & Assert
+      await expect(getCurrentlyReservedCarsByCustomerService(customerName))
+        .rejects.toThrow('Reservation query failed');
+    });
+
+    it('should handle empty customer name', async () => {
+      // Arrange
+      const customerName = '';
+
+      const mockQuery = {
+        UsersTable: {
+          findFirst: jest.fn().mockResolvedValue(null)
+        }
+      };
+
+      mockDb.query = mockQuery as any;
+
+      // Act & Assert
+      await expect(getCurrentlyReservedCarsByCustomerService(customerName))
+        .rejects.toThrow('Customer not found');
+
+      expect(mockEq).toHaveBeenCalledWith(UsersTable.firstName, '');
+    });
+
+    it('should handle whitespace-only customer name', async () => {
+      // Arrange
+      const customerName = '   ';
+
+      const mockQuery = {
+        UsersTable: {
+          findFirst: jest.fn().mockResolvedValue(null)
+        }
+      };
+
+      mockDb.query = mockQuery as any;
+
+      // Act & Assert
+      await expect(getCurrentlyReservedCarsByCustomerService(customerName))
+        .rejects.toThrow('Customer not found');
+
+      expect(mockEq).toHaveBeenCalledWith(UsersTable.firstName, '   ');
+    });
+
+    it('should return empty array when customer has no current reservations', async () => {
+      // Arrange
+      const customerName = 'John';
+      const mockCustomer = {
+        userID: 1,
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com'
+      };
+
+      const mockQuery = {
+        UsersTable: {
+          findFirst: jest.fn().mockResolvedValue(mockCustomer)
+        }
+      };
+
+      mockDb.query = mockQuery as any;
+
+      const mockSelect = {
+        from: jest.fn().mockReturnThis(),
+        rightJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([])
+      };
+
+      mockDb.select = jest.fn().mockReturnValue(mockSelect);
+
+      // Act
+      const result = await getCurrentlyReservedCarsByCustomerService(customerName);
+
+      // Assert
+      expect(result).toEqual([]);
     });
   });
 
@@ -443,39 +729,75 @@ describe('Reservation Service', () => {
       await expect(createReservationService(mockReservation)).rejects.toThrow('Constraint violation');
     });
 
-    // it('should create reservation with minimal required data', async () => {
-    //   // Arrange
-    //   const minimalReservation = {
-    //     customerID: 1,
-    //     carID: 1,
-    //     reservationDate: '2024-01-10',
-    //     pickupDate: '2024-01-12'
-        
-    //   };
+    it('should create reservation with minimal required data', async () => {
+      // Arrange
+      const minimalReservation = {
+        customerID: 1,
+        carID: 1,
+        reservationDate: '2024-01-10',
+        pickupDate: '2024-01-12'
+      };
 
-    //   const mockInsertResult = [{ ...minimalReservation, reservationID: 1 }];
+      const mockInsertResult = [{ ...minimalReservation, reservationID: 1 }];
       
-    //   const mockInsert = {
-    //     values: jest.fn().mockReturnThis(),
-    //     returning: jest.fn().mockResolvedValue(mockInsertResult)
-    //   };
+      const mockInsert = {
+        values: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue(mockInsertResult)
+      };
 
-    //   mockDb.insert = jest.fn().mockReturnValue(mockInsert);
+      mockDb.insert = jest.fn().mockReturnValue(mockInsert);
 
-    //   // Act
-    //   const result = await createReservationService(minimalReservation);
+      // Act
+      const result = await createReservationService(minimalReservation);
 
-    //   // Assert
-    //   expect(mockDb.insert).toHaveBeenCalledWith(ReservationTable);
-    //   expect(mockInsert.values).toHaveBeenCalledWith(minimalReservation);
-    //   expect(result).toEqual(mockInsertResult);
-    // });
+      // Assert
+      expect(mockDb.insert).toHaveBeenCalledWith(ReservationTable);
+      expect(mockInsert.values).toHaveBeenCalledWith(minimalReservation);
+      expect(result).toEqual(mockInsertResult);
+    });
+
+    it('should handle foreign key constraint errors', async () => {
+      // Arrange
+      const invalidReservation = {
+        customerID: 999, // Non-existent customer
+        carID: 1,
+        reservationDate: '2024-01-10',
+        pickupDate: '2024-01-12'
+      };
+
+      const mockInsert = {
+        values: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockRejectedValue(new Error('Foreign key constraint violation'))
+      };
+
+      mockDb.insert = jest.fn().mockReturnValue(mockInsert);
+
+      // Act & Assert
+      await expect(createReservationService(invalidReservation))
+        .rejects.toThrow('Foreign key constraint violation');
+    });
+
+    it('should handle null or undefined reservation data', async () => {
+      // Arrange
+      const nullReservation = null as any;
+
+      const mockInsert = {
+        values: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockRejectedValue(new Error('Invalid reservation data'))
+      };
+
+      mockDb.insert = jest.fn().mockReturnValue(mockInsert);
+
+      // Act & Assert
+      await expect(createReservationService(nullReservation))
+        .rejects.toThrow('Invalid reservation data');
+    });
   });
 
-  describe('Edge Cases and Validation', () => {
-    it('should handle zero customer ID in getReservationByCustomerIdService', async () => {
+  describe('Edge Cases and Input Validation', () => {
+    it('should handle very large customer ID values', async () => {
       // Arrange
-      const customerId = 0;
+      const largeCustomerId = Number.MAX_SAFE_INTEGER;
       
       const mockSelect = {
         from: jest.fn().mockReturnThis(),
@@ -486,16 +808,16 @@ describe('Reservation Service', () => {
       mockDb.select = jest.fn().mockReturnValue(mockSelect);
 
       // Act
-      const result = await getReservationByCustomerIdService(customerId);
+      const result = await getReservationByCustomerIdService(largeCustomerId);
 
       // Assert
-      expect(mockEq).toHaveBeenCalledWith(ReservationTable.customerID, 0);
+      expect(mockEq).toHaveBeenCalledWith(ReservationTable.customerID, largeCustomerId);
       expect(result).toEqual([]);
     });
 
-    it('should handle negative car ID in getReservationByCarIdService', async () => {
+    it('should handle very large car ID values', async () => {
       // Arrange
-      const carId = -1;
+      const largeCarId = Number.MAX_SAFE_INTEGER;
       
       const mockSelect = {
         from: jest.fn().mockReturnThis(),
@@ -506,16 +828,16 @@ describe('Reservation Service', () => {
       mockDb.select = jest.fn().mockReturnValue(mockSelect);
 
       // Act
-      const result = await getReservationByCarIdService(carId);
+      const result = await getReservationByCarIdService(largeCarId);
 
       // Assert
-      expect(mockEq).toHaveBeenCalledWith(ReservationTable.carID, -1);
+      expect(mockEq).toHaveBeenCalledWith(ReservationTable.carID, largeCarId);
       expect(result).toEqual([]);
     });
 
-    it('should handle empty customer name in getCurrentlyReservedCarsByCustomerService', async () => {
+    it('should handle special characters in customer name', async () => {
       // Arrange
-      const customerName = '';
+      const customerName = "O'Neil-Smith";
 
       const mockQuery = {
         UsersTable: {
@@ -529,7 +851,8 @@ describe('Reservation Service', () => {
       await expect(getCurrentlyReservedCarsByCustomerService(customerName))
         .rejects.toThrow('Customer not found');
 
-      expect(mockEq).toHaveBeenCalledWith(UsersTable.firstName, '');
+      expect(mockEq).toHaveBeenCalledWith(UsersTable.firstName, customerName);
     });
+
   });
-});
+})
