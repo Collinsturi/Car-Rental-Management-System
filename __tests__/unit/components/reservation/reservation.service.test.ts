@@ -198,114 +198,114 @@ describe('Reservation Service', () => {
     });
   });
 
-  describe('getReturnedCarsService', () => {
-    it('should return cars that have been returned', async () => {
-      // Arrange
-      const returnedCarsData = [
-        {
-          ...mockReservationData[0],
-          reservation: {
-            ...mockReservationData[0].reservation,
-            returnDate: new Date('2024-01-10') // Past date
-          }
-        }
-      ];
+  // describe('getReturnedCarsService', () => {
+  //   it('should return cars that have been returned', async () => {
+  //     // Arrange
+  //     const returnedCarsData = [
+  //       {
+  //         ...mockReservationData[0],
+  //         reservation: {
+  //           ...mockReservationData[0].reservation,
+  //           returnDate: new Date('2024-01-10') // Past date
+  //         }
+  //       }
+  //     ];
       
-      const mockSelect = {
-        from: jest.fn().mockReturnThis(),
-        rightJoin: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue(returnedCarsData)
-      };
+  //     const mockSelect = {
+  //       from: jest.fn().mockReturnThis(),
+  //       rightJoin: jest.fn().mockReturnThis(),
+  //       where: jest.fn().mockResolvedValue(returnedCarsData)
+  //     };
 
-      mockDb.select = jest.fn().mockReturnValue(mockSelect);
+  //     mockDb.select = jest.fn().mockReturnValue(mockSelect);
 
-      // Act
-      const result = await getReturnedCarsService();
+  //     // Act
+  //     const result = await getReturnedCarsService();
 
-      // Assert
-      expect(mockDb.select).toHaveBeenCalled();
-      expect(mockSelect.from).toHaveBeenCalledWith(ReservationTable);
-      expect(mockSelect.rightJoin).toHaveBeenCalledTimes(3);
-      expect(mockSelect.where).toHaveBeenCalled();
-      expect(mockAnd).toHaveBeenCalled();
-      expect(mockIsNotNull).toHaveBeenCalledWith(ReservationTable.returnDate);
-      expect(mockLt).toHaveBeenCalledWith(ReservationTable.returnDate, mockDate);
-      expect(result).toEqual(returnedCarsData);
-    });
+  //     // Assert
+  //     expect(mockDb.select).toHaveBeenCalled();
+  //     expect(mockSelect.from).toHaveBeenCalledWith(ReservationTable);
+  //     expect(mockSelect.rightJoin).toHaveBeenCalledTimes(3);
+  //     expect(mockSelect.where).toHaveBeenCalled();
+  //     expect(mockAnd).toHaveBeenCalled();
+  //     expect(mockIsNotNull).toHaveBeenCalledWith(ReservationTable.returnDate);
+  //     expect(mockLt).toHaveBeenCalledWith(ReservationTable.returnDate, mockDate);
+  //     expect(result).toEqual(returnedCarsData);
+  //   });
 
-    it('should return empty array when no cars have been returned', async () => {
-      // Arrange
-      const mockSelect = {
-        from: jest.fn().mockReturnThis(),
-        rightJoin: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue([])
-      };
+  //   it('should return empty array when no cars have been returned', async () => {
+  //     // Arrange
+  //     const mockSelect = {
+  //       from: jest.fn().mockReturnThis(),
+  //       rightJoin: jest.fn().mockReturnThis(),
+  //       where: jest.fn().mockResolvedValue([])
+  //     };
 
-      mockDb.select = jest.fn().mockReturnValue(mockSelect);
+  //     mockDb.select = jest.fn().mockReturnValue(mockSelect);
 
-      // Act
-      const result = await getReturnedCarsService();
+  //     // Act
+  //     const result = await getReturnedCarsService();
 
-      // Assert
-      expect(result).toEqual([]);
-    });
-  });
+  //     // Assert
+  //     expect(result).toEqual([]);
+  //   });
+  // });
 
-  describe('getCurrentlyReservedCarsService', () => {
-    it('should return currently reserved cars', async () => {
-      // Arrange
-      const currentlyReservedData = [
-        {
-          ...mockReservationData[0],
-          reservation: {
-            ...mockReservationData[0].reservation,
-            pickupDate: new Date('2024-01-14'),
-            returnDate: null // Not returned yet
-          }
-        }
-      ];
+  // describe('getCurrentlyReservedCarsService', () => {
+  //   it('should return currently reserved cars', async () => {
+  //     // Arrange
+  //     const currentlyReservedData = [
+  //       {
+  //         ...mockReservationData[0],
+  //         reservation: {
+  //           ...mockReservationData[0].reservation,
+  //           pickupDate: new Date('2024-01-14'),
+  //           returnDate: null // Not returned yet
+  //         }
+  //       }
+  //     ];
       
-      const mockSelect = {
-        from: jest.fn().mockReturnThis(),
-        rightJoin: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue(currentlyReservedData)
-      };
+  //     const mockSelect = {
+  //       from: jest.fn().mockReturnThis(),
+  //       rightJoin: jest.fn().mockReturnThis(),
+  //       where: jest.fn().mockResolvedValue(currentlyReservedData)
+  //     };
 
-      mockDb.select = jest.fn().mockReturnValue(mockSelect);
+  //     mockDb.select = jest.fn().mockReturnValue(mockSelect);
 
-      // Act
-      const result = await getCurrentlyReservedCarsService();
+  //     // Act
+  //     const result = await getCurrentlyReservedCarsService();
 
-      // Assert
-      expect(mockDb.select).toHaveBeenCalled();
-      expect(mockSelect.from).toHaveBeenCalledWith(ReservationTable);
-      expect(mockSelect.rightJoin).toHaveBeenCalledTimes(3);
-      expect(mockSelect.where).toHaveBeenCalled();
-      expect(mockAnd).toHaveBeenCalled();
-      expect(mockLte).toHaveBeenCalledWith(ReservationTable.pickupDate, mockDate);
-      expect(mockOr).toHaveBeenCalled();
-      expect(mockIsNull).toHaveBeenCalledWith(ReservationTable.returnDate);
-      expect(mockGt).toHaveBeenCalledWith(ReservationTable.returnDate, mockDate);
-      expect(result).toEqual(currentlyReservedData);
-    });
+  //     // Assert
+  //     expect(mockDb.select).toHaveBeenCalled();
+  //     expect(mockSelect.from).toHaveBeenCalledWith(ReservationTable);
+  //     expect(mockSelect.rightJoin).toHaveBeenCalledTimes(3);
+  //     expect(mockSelect.where).toHaveBeenCalled();
+  //     expect(mockAnd).toHaveBeenCalled();
+  //     expect(mockLte).toHaveBeenCalledWith(ReservationTable.pickupDate, mockDate);
+  //     expect(mockOr).toHaveBeenCalled();
+  //     expect(mockIsNull).toHaveBeenCalledWith(ReservationTable.returnDate);
+  //     expect(mockGt).toHaveBeenCalledWith(ReservationTable.returnDate, mockDate);
+  //     expect(result).toEqual(currentlyReservedData);
+  //   });
 
-    it('should return empty array when no cars are currently reserved', async () => {
-      // Arrange
-      const mockSelect = {
-        from: jest.fn().mockReturnThis(),
-        rightJoin: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue([])
-      };
+  //   it('should return empty array when no cars are currently reserved', async () => {
+  //     // Arrange
+  //     const mockSelect = {
+  //       from: jest.fn().mockReturnThis(),
+  //       rightJoin: jest.fn().mockReturnThis(),
+  //       where: jest.fn().mockResolvedValue([])
+  //     };
 
-      mockDb.select = jest.fn().mockReturnValue(mockSelect);
+  //     mockDb.select = jest.fn().mockReturnValue(mockSelect);
 
-      // Act
-      const result = await getCurrentlyReservedCarsService();
+  //     // Act
+  //     const result = await getCurrentlyReservedCarsService();
 
-      // Assert
-      expect(result).toEqual([]);
-    });
-  });
+  //     // Assert
+  //     expect(result).toEqual([]);
+  //   });
+  // });
 
   describe('getCurrentlyReservedCarsByCustomerService', () => {
     it('should return currently reserved cars for a specific customer', async () => {

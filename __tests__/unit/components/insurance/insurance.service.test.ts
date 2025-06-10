@@ -17,7 +17,6 @@ jest.mock('drizzle-orm', () => ({
   ilike: jest.fn(),
 }));
 
-// Mock the schema tables
 jest.mock('../../../../src/Drizzle/schema', () => ({
   InsuranceTable: {
     insuranceID: 'insuranceID',
@@ -35,8 +34,157 @@ jest.mock('../../../../src/Drizzle/schema', () => ({
   },
 }));
 
+
 describe('Insurance Service', () => {
-  // Mock database operations
+  const mockInsert = jest.fn();
+  const mockSelect = jest.fn();
+  const mockValues = jest.fn();
+  const mockReturning = jest.fn();
+  const mockFrom = jest.fn();
+  const mockLeftJoin = jest.fn();
+  const mockWhere = jest.fn();
+
+  // const mockEq = eq as jest.MockedFunction<typeof eq>;
+  // const mockIlike = ilike as jest.MockedFunction<typeof ilike>;
+
+  const sampleInsuranceData: InsuranceEntity = {
+    insuranceID: 1,
+    carID: 1,
+    insuranceProvider: 'State Farm',
+    policyNumber: 'SF123456789',
+    startDate: '2024-01-01',
+    endDate: '2024-12-31',
+  };
+
+  const sampleInsuranceWithCar = {
+    insurance: sampleInsuranceData,
+    car: {
+      carID: 1,
+      carModel: 'Toyota Camry',
+      year: new Date('2023-01-01'),
+      color: 'Blue',
+    },
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    (db as any).insert = mockInsert;
+    (db as any).select = mockSelect;
+
+    mockInsert.mockReturnValue({ values: mockValues });
+    mockValues.mockReturnValue({ returning: mockReturning });
+
+    mockSelect.mockReturnValue({ from: mockFrom });
+    mockFrom.mockReturnValue({ leftJoin: mockLeftJoin, where: mockWhere });
+    mockLeftJoin.mockReturnValue({ where: mockWhere });
+
+    mockEq.mockReturnValue('mocked_eq_condition' as any);
+    mockIlike.mockReturnValue('mocked_ilike_condition' as any);
+  });
+
+  afterAll(async () => {
+    // Prevent Jest open handle error by ensuring all microtasks resolve
+    await new Promise(resolve => setTimeout(resolve, 0));
+  });
+
+  describe('createInsuranceService', () => {
+    it('should create insurance successfully', async () => {
+      mockReturning.mockResolvedValue([sampleInsuranceData]);
+      const result = await createInsuranceService(sampleInsuranceData);
+      expect(result).toEqual(sampleInsuranceData);
+    });
+
+    it('should throw error when insurance creation fails', async () => {
+      mockReturning.mockResolvedValue([]);
+      await expect(createInsuranceService(sampleInsuranceData))
+        .rejects.toThrow('Create insurance error: Failed to create insurance.');
+    });
+
+    it('should handle DB error during creation', async () => {
+      mockReturning.mockRejectedValue(new Error('DB fail'));
+      await expect(createInsuranceService(sampleInsuranceData))
+        .rejects.toThrow('Create insurance error: DB fail');
+    });
+  });
+
+  describe('getInsuranceByIdService', () => {
+    it('should return insurance by ID', async () => {
+      mockWhere.mockResolvedValue([sampleInsuranceWithCar]);
+      const result = await getInsuranceByIdService(1);
+      expect(result).toEqual([sampleInsuranceWithCar]);
+    });
+
+    it('should return null when not found', async () => {
+      mockWhere.mockResolvedValue(null);
+      const result = await getInsuranceByIdService(999);
+      expect(result).toBeNull();
+    });
+
+    it('should handle DB error', async () => {
+      mockWhere.mockRejectedValue(new Error('DB fail'));
+      await expect(getInsuranceByIdService(1)).rejects.toThrow('Get insurance by ID error: DB fail');
+    });
+  });
+
+  describe('getInsurancesByCarIdService', () => {
+    it('should return insurances by car ID', async () => {
+      mockWhere.mockResolvedValue([sampleInsuranceWithCar]);
+      const result = await getInsurancesByCarIdService(1);
+      expect(result).toEqual([sampleInsuranceWithCar]);
+    });
+
+    it('should return empty array when not found', async () => {
+      mockWhere.mockResolvedValue(null);
+      const result = await getInsurancesByCarIdService(999);
+      expect(result).toEqual([]);
+    });
+
+    it('should handle DB error', async () => {
+      mockWhere.mockRejectedValue(new Error('DB timeout'));
+      await expect(getInsurancesByCarIdService(1)).rejects.toThrow('Get insurances by car ID error: DB timeout');
+    });
+  });
+
+  describe('getInsurancesByProviderService', () => {
+    it('should return insurances by provider', async () => {
+      mockWhere.mockResolvedValue([sampleInsuranceWithCar]);
+      const result = await getInsurancesByProviderService('State Farm');
+      expect(result).toEqual([sampleInsuranceWithCar]);
+    });
+
+    it('should return empty array for no matches', async () => {
+      mockWhere.mockResolvedValue(null);
+      const result = await getInsurancesByProviderService('Unknown');
+      expect(result).toEqual([]);
+    });
+
+    it('should handle DB error', async () => {
+      mockWhere.mockRejectedValue(new Error('DB error'));
+      await expect(getInsurancesByProviderService('State Farm')).rejects.toThrow('Get insurances by provider error: DB error');
+    });
+  });
+
+  describe('getAllInsurancesService', () => {
+    it('should return all insurances', async () => {
+      mockLeftJoin.mockResolvedValue([sampleInsuranceWithCar]);
+      const result = await getAllInsurancesService();
+      expect(result).toEqual([sampleInsuranceWithCar]);
+    });
+
+    it('should return empty array when no records', async () => {
+      mockLeftJoin.mockResolvedValue(null);
+      const result = await getAllInsurancesService();
+      expect(result).toEqual([]);
+    });
+
+    it('should handle DB error', async () => {
+      mockLeftJoin.mockRejectedValue(new Error('DB fail'));
+      await expect(getAllInsurancesService()).rejects.toThrow('Get all insurances error: DB fail');
+    });
+  });
+});
+
   const mockInsert = jest.fn();
   const mockSelect = jest.fn();
   const mockValues = jest.fn();
@@ -69,35 +217,25 @@ describe('Insurance Service', () => {
     },
   };
 
-  beforeEach(() => {
-    // Reset all mocks before each test
-    jest.clearAllMocks();
+beforeEach(() => {
+  jest.clearAllMocks();
 
-    // Setup database mock chain
-    (db as any).insert = mockInsert;
-    (db as any).select = mockSelect;
+  (db as any).insert = mockInsert;
+  (db as any).select = mockSelect;
 
-    // Setup method chaining
-    mockInsert.mockReturnValue({ values: mockValues });
-    mockValues.mockReturnValue({ returning: mockReturning });
-    
-    mockSelect.mockReturnValue({ 
-      from: mockFrom,
-    });
-    
-    mockFrom.mockReturnValue({ 
-      leftJoin: mockLeftJoin,
-      where: mockWhere,
-    });
-    
-    mockLeftJoin.mockReturnValue({ 
-      where: mockWhere,
-    });
+  mockInsert.mockReturnValue({ values: mockValues });
+  mockValues.mockReturnValue({ returning: mockReturning });
+  mockReturning.mockResolvedValue([sampleInsuranceData]);
 
-    // Mock drizzle-orm functions
-    mockEq.mockReturnValue('mocked_eq_condition' as any);
-    mockIlike.mockReturnValue('mocked_ilike_condition' as any);
-  });
+  mockSelect.mockReturnValue({ from: mockFrom });
+  mockFrom.mockReturnValue({ leftJoin: mockLeftJoin });
+  mockLeftJoin.mockReturnValue({ where: mockWhere });
+  mockWhere.mockResolvedValue([sampleInsuranceWithCar]); 
+
+  mockEq.mockReturnValue('mocked_eq_condition' as any);
+  mockIlike.mockReturnValue('mocked_ilike_condition' as any);
+});
+
 
   describe('createInsuranceService', () => {
     it('should create insurance successfully', async () => {
@@ -454,4 +592,7 @@ describe('Insurance Service', () => {
 //       expect(results[2]).toEqual([sampleInsuranceWithCar]);
 //     });
 //   });
-});
+
+  afterAll(async () => {
+    
+  });

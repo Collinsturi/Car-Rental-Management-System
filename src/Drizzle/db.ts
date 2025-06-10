@@ -1,43 +1,18 @@
-import dotenv from 'dotenv';
-
-  import { drizzle } from "drizzle-orm/node-postgres"
-  import { Client, Pool } from "pg"
-  import * as schema from "./schema"
-
-  export const client = new Client({
-      connectionString: process.env.Database_URL as string
-  })
-
-//   const main = async () => {
-//       await client.connect()
-//   }
-//   main().then(() => {
-//       console.log("Connected to the database")
-//   }).catch((error) => {
-//       console.error("Error connecting to the database:", error)
-//   })
+import "dotenv/config";
+import { drizzle } from "drizzle-orm/node-postgres"
+import { Client } from "pg";
+import * as schema from "./schema"
 
 
-//   const db = drizzle(client, { schema, logger: true })
+export const client = new Client({
+    connectionString: process.env.Database_URL as string,
+})
 
-//   export default db
+const main = async () => {
+    await client.connect();
+}
 
-dotenv.config();
+main()
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, 
-});
-
-pool.connect()
-  .then(() => {
-    console.log('Connected to the Neon database');
-  })
-  .catch((error) => {
-    console.error('Error connecting to the Neon database:', error);
-  });
-
-const db = drizzle(pool, { schema });
-
-
+const db = drizzle(client, { schema, logger: false });
 export default db;
