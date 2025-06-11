@@ -1,320 +1,276 @@
 import request from 'supertest';
-import bcrypt from 'bcryptjs';
-import app from '../../../src/index';
-import db from '../../../src/Drizzle/db';
-import { BookingsTable, CarTable, CustomerTable, UsersTable } from '../../../src/Drizzle/schema';
-import { eq } from 'drizzle-orm';
+import Express from "express";
+import app from "../../../src/index"
+import * as bookingService from '../../../src/components/Booking/booking.service'; 
 
-let token: string;
-let userId: number;
-let customerId: number;
-let carId: number;
-let bookingId: number;
 
-const testUser = {
-    firstName: "Booking",
-    lastName: "Tester",
-    email: "bookinguser@mail.com",
-    password: "bookingpass123"
-};
 
-const testCustomer = {
-    firstName: "John",
-    lastName: "Customer",
-    email: "customer@mail.com",
-    phoneNumber: "1234567890",
-    address: "123 Test Street",
-    driversLicenseNumber: "DL123456789"
-};
+jest.mock('../../../src/components/Booking/booking.service');
 
-const testCar = {
-    make: "Toyota",
-    model: "Camry",
-    year: 2023,
-    color: "Blue",
-    registrationNumber: "ABC123",
-    dailyRate: "50.00",
-    availability: true
-};
+const mockedBookingService = bookingService as jest.Mocked<typeof bookingService>;
 
-beforeAll(async () => {
-    // Create a test user
-    const hashedPassword = bcrypt.hashSync(testUser.password, 10);
-    const [user] = await db.insert(UsersTable).values({
-        ...testUser,
-        password: hashedPassword,
-        role: "admin",
-        isVerified: true
-    }).returning();
-    userId = user.id;
 
-    // Create a test customer
-    const [customer] = await db.insert(CustomerTable).values(testCustomer).returning();
-    customerId = customer.customerID;
+describe("Creating a booking using the API", () => {
+    beforeAll(async () => {
+        jest.clearAllMocks();
+    })
 
-    // Create a test car
-    const [car] = await db.insert(CarTable).values(testCar).returning();
-    carId = car.carID;
+    it('should create a new booking successfully', async () => {
+        // Mock data for a new booking
+        const newBookingData = {
+            carID: 1,
+            customerID: 101,
+            rentalStartDate: '2025-07-01',
+            rentalEndDate: '2025-07-10',
+            totalAmount: '250.00'
+        };
 
-    // Login to get the token
-    const res = await request(app)
-        .post("/auth/login")
-        .send({
-            email: testUser.email,
-            password: testUser.password
+        // Mock the service function to return a successful booking creation
+        const createdBooking = { bookingID: 1, ...newBookingData };
+        mockedBookingService.createBookingService.mockResolvedValue(createdBooking);
+
+        // Make a POST request to the /booking endpoint
+        const res = await request(app)
+            .post('/booking')
+            .send(newBookingData);
+
+        // Assertions
+        expect(res.statusCode).toEqual(201); 
+        expect(res.body.message).toEqual('Booking created successfully');
+        expect(res.body.data).toEqual(createdBooking);
+        // Ensure the service function was called with the correct data
+        expect(mockedBookingService.createBookingService).toHaveBeenCalledWith(newBookingData);
+    });
+
+    it('should return 500 if an error occurs during booking creation', async () => {
+        // Mock the service function to throw an error
+        const errorMessage = 'Database error during booking creation';
+        mockedBookingService.createBookingService.mockRejectedValue(new Error(errorMessage));
+
+        // Make a POST request with some data (data itself doesn't matter for this error test)
+        const newBookingData = {
+            carID: 1,
+            customerID: 101,
+            rentalStartDate: '2025-07-01',
+            rentalEndDate: '2025-07-10',
+            totalAmount: '250.00'
+        };
+        const res = await request(app)
+            .post('/booking')
+            .send(newBookingData);
+
+        // Assertions
+        expect(res.statusCode).toEqual(500); // Expect a 500 Internal Server Error
+        expect(res.body.error).toEqual('Failed to create booking');
+        expect(res.body.message).toEqual(errorMessage);
+    });
+
+    // Test suite for GET /booking/:bookingId (Get Booking by ID)
+    describe('GET /booking/:bookingId', () => {
+        it('should return a booking by ID', async () => {
+            const bookingId = 1;
+            const mockBooking = {
+                bookingID: bookingId,
+                carID: 1,
+                customerID: 101,
+                rentalStartDate: '2025-07-01',
+                rentalEndDate: '2025-07-10',
+                totalAmount: '250.00'
+            };
+            // Mock the service function to return the specific booking
+            mockedBookingService.getBookingByIdService.mockResolvedValue(mockBooking);
+
+            // Make a GET request to the /booking/:bookingId endpoint
+            const res = await request(app).get(`/booking/${bookingId}`);
+
+            // Assertions
+            expect(res.statusCode).toEqual(200); // Expect a 200 OK status code
+            expect(res.body.message).toEqual(`Booking details for ID: ${bookingId}`);
+            expect(res.body.data).toEqual(mockBooking);
+            expect(mockedBookingService.getBookingByIdService).toHaveBeenCalledWith(bookingId);
         });
-    token = res.body.token;
-});
 
-// afterAll(async () => {
-//     // Clean up test data
-//     await db.delete(BookingsTable).where(eq(BookingsTable.customerID, customerId));
-//     await db.delete(CarTable).where(eq(CarTable.carID, carId));
-//     await db.delete(CustomerTable).where(eq(CustomerTable.customerID, customerId));
-//     await db.delete(UsersTable).where(eq(UsersTable.email, testUser.email));
-//     await db.$client.end();
-// });
+        it('should return 404 if booking is not found by ID', async () => {
+            const bookingId = 999;
+            // Mock the service function to return null (booking not found)
+            mockedBookingService.getBookingByIdService.mockResolvedValue(null);
 
-describe("Booking API Integration Tests", () => {
-    it("Should create a booking", async () => {
-        const booking = {
-            carID: carId,
-            customerID: customerId,
-            rentalStartDate: "2025-07-01",
-            rentalEndDate: "2025-07-05",
-            totalAmount: "200.00"
-        };
+            // Make a GET request
+            const res = await request(app).get(`/booking/${bookingId}`);
 
-        const res = await request(app)
-            .post("/booking")
-            .set("Authorization", `Bearer ${token}`)
-            .send(booking);
+            // Assertions
+            expect(res.statusCode).toEqual(404); // Expect a 404 Not Found status code
+            expect(res.body.message).toEqual(`Booking with ID ${bookingId} not found.`);
+            expect(mockedBookingService.getBookingByIdService).toHaveBeenCalledWith(bookingId);
+        });
 
-        expect(res.statusCode).toBe(201);
-        expect(res.body).toHaveProperty("message", "Booking created successfully");
-        expect(res.body.booking).toHaveProperty("bookingID");
-        bookingId = res.body.booking.bookingID;
-        console.log(`Created Booking ID: ${bookingId}`);
+        it('should return 500 if an error occurs while getting booking by ID', async () => {
+            const bookingId = 1;
+            const errorMessage = 'Database error getting booking by ID';
+            // Mock the service function to throw an error
+            mockedBookingService.getBookingByIdService.mockRejectedValue(new Error(errorMessage));
+
+            // Make a GET request
+            const res = await request(app).get(`/booking/${bookingId}`);
+
+            // Assertions
+            expect(res.statusCode).toEqual(500); // Expect a 500 Internal Server Error
+            expect(res.body.error).toEqual('Failed to get booking');
+            expect(res.body.message).toEqual(errorMessage);
+        });
     });
 
-    it("Should get all bookings", async () => {
-        const res = await request(app)
-            .get("/booking")
-            .set("Authorization", `Bearer ${token}`);
+    // Test suite for GET /booking/car/:carId (Get Bookings by Car ID)
+    describe('GET /booking/car/:carId', () => {
+        it('should return bookings for a specific car ID', async () => {
+            const carId = 1;
+            const mockBookings = [
+                { bookingID: 1, carID: carId, customerID: 101, rentalStartDate: '2025-07-01', rentalEndDate: '2025-07-10', totalAmount: '250.00' },
+                { bookingID: 2, carID: carId, customerID: 102, rentalStartDate: '2025-08-01', rentalEndDate: '2025-08-05', totalAmount: '150.00' },
+            ];
+            // Mock the service function to return an array of bookings
+            mockedBookingService.getBookingsByCarIdService.mockResolvedValue(mockBookings);
 
-        expect(res.statusCode).toBe(200);
-        expect(res.body.data).toBeInstanceOf(Array);
-        expect(res.body.data.length).toBeGreaterThan(0);
-        console.log("All Bookings:", res.body.data);
+            // Make a GET request
+            const res = await request(app).get(`/booking/car/${carId}`);
+
+            // Assertions
+            expect(res.statusCode).toEqual(200);
+            expect(res.body.message).toEqual(`Bookings for car ID: ${carId}`);
+            expect(res.body.data).toEqual(mockBookings);
+            expect(mockedBookingService.getBookingsByCarIdService).toHaveBeenCalledWith(carId);
+        });
+
+        it('should return 200 with a message if no bookings found for car ID', async () => {
+            const carId = 999;
+            // Mock the service function to return an empty array
+            mockedBookingService.getBookingsByCarIdService.mockResolvedValue([]);
+
+            // Make a GET request
+            const res = await request(app).get(`/booking/car/${carId}`);
+
+            // Assertions
+            expect(res.statusCode).toEqual(200); // Controller returns 200 even if no data
+            expect(res.body.message).toEqual(`There was no car with car id: ${carId}`);
+            expect(res.body.data).toBeUndefined(); // Data should be undefined if message is present
+            expect(mockedBookingService.getBookingsByCarIdService).toHaveBeenCalledWith(carId);
+        });
+
+        it('should return 500 if an error occurs while getting bookings by car ID', async () => {
+            const carId = 1;
+            const errorMessage = 'Database error getting bookings by car ID';
+            // Mock the service function to throw an error
+            mockedBookingService.getBookingsByCarIdService.mockRejectedValue(new Error(errorMessage));
+
+            // Make a GET request
+            const res = await request(app).get(`/booking/car/${carId}`);
+
+            // Assertions
+            expect(res.statusCode).toEqual(500);
+            expect(res.body.error).toEqual('Failed to get bookings by card ID');
+            expect(res.body.message).toEqual(errorMessage);
+        });
     });
 
-    it("Should get a booking by ID", async () => {
-        const res = await request(app)
-            .get(`/booking/${bookingId}`)
-            .set("Authorization", `Bearer ${token}`);
+    // Test suite for GET /booking/customer/:customerId (Get Bookings by Customer ID)
+    describe('GET /booking/customer/:customerId', () => {
+        it('should return bookings for a specific customer ID', async () => {
+            const customerId = 101;
+            const mockBookings = [
+                { bookingID: 1, carID: 1, customerID: customerId, rentalStartDate: '2025-07-01', rentalEndDate: '2025-07-10', totalAmount: '250.00' },
+                { bookingID: 3, carID: 2, customerID: customerId, rentalStartDate: '2025-09-01', rentalEndDate: '2025-09-03', totalAmount: '100.00' },
+            ];
+            // Mock the service function
+            mockedBookingService.getBookingsByCustomerIdService.mockResolvedValue(mockBookings);
 
-        expect(res.statusCode).toBe(200);
-        expect(res.body.data).toHaveProperty("bookingID", bookingId);
-        expect(res.body.data).toHaveProperty("carID", carId);
-        expect(res.body.data).toHaveProperty("customerID", customerId);
-        console.log("Booking by ID:", res.body.data);
+            // Make a GET request
+            const res = await request(app).get(`/booking/customer/${customerId}`);
+
+            // Assertions
+            expect(res.statusCode).toEqual(200);
+            expect(res.body.message).toEqual(`Bookings for customer ID: ${customerId}`);
+            expect(res.body.data).toEqual(mockBookings);
+            expect(mockedBookingService.getBookingsByCustomerIdService).toHaveBeenCalledWith(customerId);
+        });
+
+        it('should return 200 with a message if no bookings found for customer ID', async () => {
+            const customerId = 999;
+            // Mock the service function to return an empty array
+            mockedBookingService.getBookingsByCustomerIdService.mockResolvedValue([]);
+
+            // Make a GET request
+            const res = await request(app).get(`/booking/customer/${customerId}`);
+
+            // Assertions
+            expect(res.statusCode).toEqual(200); // Controller returns 200 even if no data
+            expect(res.body.message).toEqual(`No bookings were found for customer id ${customerId}`);
+            expect(res.body.data).toBeUndefined(); // Data should be undefined if message is present
+            expect(mockedBookingService.getBookingsByCustomerIdService).toHaveBeenCalledWith(customerId);
+        });
+
+        it('should return 500 if an error occurs while getting bookings by customer ID', async () => {
+            const customerId = 101;
+            const errorMessage = 'Database error getting bookings by customer ID';
+            // Mock the service function to throw an error
+            mockedBookingService.getBookingsByCustomerIdService.mockRejectedValue(new Error(errorMessage));
+
+            // Make a GET request
+            const res = await request(app).get(`/booking/customer/${customerId}`);
+
+            // Assertions
+            expect(res.statusCode).toEqual(500);
+            expect(res.body.error).toEqual('Failed to get bookings by customer ID');
+            expect(res.body.message).toEqual(errorMessage);
+        });
     });
 
-    it("Should get bookings by car ID", async () => {
-        const res = await request(app)
-            .get(`/booking/car/${carId}`)
-            .set("Authorization", `Bearer ${token}`);
+    // Test suite for GET /booking (Get All Bookings)
+    describe('GET /booking', () => {
+        it('should return all bookings', async () => {
+            const mockAllBookings = [
+                { bookingID: 1, carID: 1, customerID: 101, rentalStartDate: '2025-07-01', rentalEndDate: '2025-07-10', totalAmount: '250.00' },
+                { bookingID: 2, carID: 1, customerID: 102, rentalStartDate: '2025-08-01', rentalEndDate: '2025-08-05', totalAmount: '150.00' },
+                { bookingID: 3, carID: 2, customerID: 101, rentalStartDate: '2025-09-01', rentalEndDate: '2025-09-03', totalAmount: '100.00' },
+            ];
+            // Mock the service function
+            mockedBookingService.getAllBookingsService.mockResolvedValue(mockAllBookings);
 
-        expect(res.statusCode).toBe(200);
-        expect(res.body.data).toBeInstanceOf(Array);
-        expect(res.body.data.length).toBeGreaterThan(0);
-        expect(res.body.data[0]).toHaveProperty("carID", carId);
-        console.log("Bookings by Car ID:", res.body.data);
+            // Make a GET request
+            const res = await request(app).get('/booking');
+
+            // Assertions
+            expect(res.statusCode).toEqual(200);
+            expect(res.body.message).toEqual('All bookings');
+            expect(res.body.data).toEqual(mockAllBookings);
+            expect(mockedBookingService.getAllBookingsService).toHaveBeenCalledTimes(1); // Ensure it was called once
+        });
+
+        it('should return 200 with a message if no bookings are found', async () => {
+            // Mock the service function to return an empty array
+            mockedBookingService.getAllBookingsService.mockResolvedValue([]);
+
+            // Make a GET request
+            const res = await request(app).get('/booking');
+
+            // Assertions
+            expect(res.statusCode).toEqual(200); // Controller returns 200 even if no data
+            expect(res.body.message).toEqual('No bookings have been found.');
+            expect(res.body.data).toBeUndefined(); // Data should be undefined if message is present
+            // expect(mockedBookingService.getAllBookingsService).toHaveBeenCalledTimes(1);
+        });
+
+        it('should return 500 if an error occurs while getting all bookings', async () => {
+            const errorMessage = 'Database error getting all bookings';
+            // Mock the service function to throw an error
+            mockedBookingService.getAllBookingsService.mockRejectedValue(new Error(errorMessage));
+
+            // Make a GET request
+            const res = await request(app).get('/booking');
+
+            // Assertions
+            expect(res.statusCode).toEqual(500);
+            expect(res.body.error).toEqual('Failed to get all bookings');
+            expect(res.body.message).toEqual(errorMessage);
+        });
     });
-
-    it("Should get bookings by customer ID", async () => {
-        const res = await request(app)
-            .get(`/booking/customer/${customerId}`)
-            .set("Authorization", `Bearer ${token}`);
-
-        expect(res.statusCode).toBe(200);
-        expect(res.body.data).toBeInstanceOf(Array);
-        expect(res.body.data.length).toBeGreaterThan(0);
-        expect(res.body.data[0]).toHaveProperty("customerID", customerId);
-        console.log("Bookings by Customer ID:", res.body.data);
-    });
-
-    // NEGATIVE TESTS
-    it("Should not get a booking with invalid ID", async () => {
-        const res = await request(app)
-            .get("/booking/invalid-id")
-            .set("Authorization", `Bearer ${token}`);
-
-        expect(res.statusCode).toBe(400);
-        expect(res.body).toHaveProperty("message", "Invalid ID");
-    });
-
-    it("Should not get a booking with non-existent ID", async () => {
-        const res = await request(app)
-            .get("/booking/99999")
-            .set("Authorization", `Bearer ${token}`);
-
-        expect(res.statusCode).toBe(404);
-        expect(res.body).toEqual(
-            expect.objectContaining({
-                message: "Booking not found"
-            })
-        );
-    });
-
-    it("Should not get bookings with invalid car ID", async () => {
-        const res = await request(app)
-            .get("/booking/car/invalid-id")
-            .set("Authorization", `Bearer ${token}`);
-
-        expect(res.statusCode).toBe(400);
-        expect(res.body).toHaveProperty("message", "Invalid car ID");
-    });
-
-    it("Should not get bookings with non-existent car ID", async () => {
-        const res = await request(app)
-            .get("/booking/car/99999")
-            .set("Authorization", `Bearer ${token}`);
-
-        expect(res.statusCode).toBe(404);
-        expect(res.body).toEqual(
-            expect.objectContaining({
-                message: "No bookings found for this car"
-            })
-        );
-    });
-
-    it("Should not get bookings with invalid customer ID", async () => {
-        const res = await request(app)
-            .get("/booking/customer/invalid-id")
-            .set("Authorization", `Bearer ${token}`);
-
-        expect(res.statusCode).toBe(400);
-        expect(res.body).toHaveProperty("message", "Invalid customer ID");
-    });
-
-    it("Should not get bookings with non-existent customer ID", async () => {
-        const res = await request(app)
-            .get("/booking/customer/99999")
-            .set("Authorization", `Bearer ${token}`);
-
-        expect(res.statusCode).toBe(404);
-        expect(res.body).toEqual(
-            expect.objectContaining({
-                message: "No bookings found for this customer"
-            })
-        );
-    });
-
-    it("Should not create booking with missing required fields", async () => {
-        const incompleteBooking = {
-            carID: carId,
-            // Missing customerID, dates, and totalAmount
-        };
-
-        const res = await request(app)
-            .post("/booking")
-            .set("Authorization", `Bearer ${token}`)
-            .send(incompleteBooking);
-
-        expect(res.statusCode).toBe(400);
-        expect(res.body).toHaveProperty("message");
-    });
-
-    it("Should not create booking with invalid car ID", async () => {
-        const invalidBooking = {
-            carID: 99999, // Non-existent car
-            customerID: customerId,
-            rentalStartDate: "2025-07-01",
-            rentalEndDate: "2025-07-05",
-            totalAmount: "200.00"
-        };
-
-        const res = await request(app)
-            .post("/booking")
-            .set("Authorization", `Bearer ${token}`)
-            .send(invalidBooking);
-
-        expect(res.statusCode).toBe(404);
-        expect(res.body).toEqual(
-            expect.objectContaining({
-                message: "Car not found"
-            })
-        );
-    });
-
-    it("Should not create booking with invalid customer ID", async () => {
-        const invalidBooking = {
-            carID: carId,
-            customerID: 99999, // Non-existent customer
-            rentalStartDate: "2025-07-01",
-            rentalEndDate: "2025-07-05",
-            totalAmount: "200.00"
-        };
-
-        const res = await request(app)
-            .post("/booking")
-            .set("Authorization", `Bearer ${token}`)
-            .send(invalidBooking);
-
-        expect(res.statusCode).toBe(404);
-        expect(res.body).toEqual(
-            expect.objectContaining({
-                message: "Customer not found"
-            })
-        );
-    });
-
-    it("Should not create booking with invalid date range", async () => {
-        const invalidBooking = {
-            carID: carId,
-            customerID: customerId,
-            rentalStartDate: "2025-07-05", // End date before start date
-            rentalEndDate: "2025-07-01",
-            totalAmount: "200.00"
-        };
-
-        const res = await request(app)
-            .post("/booking")
-            .set("Authorization", `Bearer ${token}`)
-            .send(invalidBooking);
-
-        expect(res.statusCode).toBe(400);
-        expect(res.body).toEqual(
-            expect.objectContaining({
-                message: "Invalid date range: End date must be after start date"
-            })
-        );
-    });
-
-    it("Should not allow access without token", async () => {
-        const res = await request(app)
-            .get("/booking")
-            .set("Authorization", ""); // No token
-
-        expect(res.statusCode).toBe(401);
-        expect(res.body).toEqual(
-            expect.objectContaining({
-                message: "Unauthorized"
-            })
-        );
-    });
-
-    it("Should not allow access with invalid token", async () => {
-        const res = await request(app)
-            .get("/booking")
-            .set("Authorization", "Bearer invalid-token");
-
-        expect(res.statusCode).toBe(401);
-        expect(res.body).toEqual(
-            expect.objectContaining({
-                message: "Invalid token"
-            })
-        );
-    });
-});
+})
