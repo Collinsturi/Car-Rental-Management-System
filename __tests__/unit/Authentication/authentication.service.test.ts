@@ -2,10 +2,16 @@ import { createUserService, userLoginService } from "../../../src/Authentication
 import db from "../../../src/Drizzle/db"
 import { UserEntity } from "../../../src/Drizzle/schema"
 
-
-jest.mock("../../../src/Drizzle/db", () => ({  // used to mock the database module
-    insert: jest.fn(() => ({ // mock the insert method
-        values: jest.fn().mockReturnThis()//mockReturnThis() is used to return the same object
+jest.mock("../../../src/Drizzle/db", () => ({
+    insert: jest.fn(() => ({
+        values: jest.fn(() => ({
+            returning: jest.fn().mockResolvedValue([{ 
+                userID: 1, 
+                firstName: 'Test', 
+                lastName: 'User', 
+                email: 'test@mail.com' 
+            }])
+        }))
     })),
     query: {
         UsersTable: {
@@ -28,18 +34,19 @@ describe("Auth Service", () => {
                 password: 'hashed',
                 userID: 1,
                 phoneNumber: null,
-                address:  null,
+                address: null,
                 role: null,
-                createdAt:  null, 
+                createdAt: null, 
                 isVerified: true,
                 verificationCode: null
             };
+            
             const result = await createUserService(user)
+            
             expect(db.insert).toHaveBeenCalled()
             expect(result).toBe("User created successfully")
         })
     })
-
 
     describe('userLoginService', () => {
         it("should return user data if found", async () => {
@@ -66,5 +73,4 @@ describe("Auth Service", () => {
             expect(result).toBeNull()
         })
     })
-
 })
