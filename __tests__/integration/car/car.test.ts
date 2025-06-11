@@ -289,7 +289,7 @@ describe('Car API Endpoints', () => {
             };
             const updatedCarResult = { carID: 1, carModel: 'Honda Civic', year: '2020-01-01', color: 'Dark Blue', rentalRate: '55.00', availability: true, locationID: 1 };
             // Mock the service to return the updated car data
-            mockedCarService.updateCarsService.mockReturnValue(updatedCarResult); // Note: updateCarsService is not async in your snippet
+            mockedCarService.updateCarsService.mockReturnValue(updatedCarResult);
 
             //Act
             const res = await request(app)
