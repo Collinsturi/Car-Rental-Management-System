@@ -15,7 +15,9 @@
     "stress:location": "k6 run PerformanceTesting/stress/location.get.stress.ts",
     "breakpoint:location": "k6 run PerformanceTesting/breakpoint/location.get.breakpoint.ts",
     "load:location": "k6 run PerformanceTesting/load/location.get.load.ts",
-    "spike:location": "k6 run PerformanceTesting/spike/location.get.spike.ts"
+    "spike:location": "k6 run PerformanceTesting/spike/location.get.spike.ts",
+    "soak:location": "k6 run PerformanceTesting/soak/location.get.soak.ts",
+    "smoke:location": "k6 run PerformanceTesting/smoke/location.get.smoke.ts"
     
   },
   "keywords": [],
