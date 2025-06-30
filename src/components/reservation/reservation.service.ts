@@ -24,6 +24,25 @@ export const getReservationByCustomerIdService = async (customerId: number) => {
 
 };
 
+export const getAllReservationsService = async() =>{
+    return db.select()
+        .from(ReservationTable)
+        .rightJoin(CustomerTable as any, on => eq(CustomerTable.customerID, ReservationTable.customerID))
+        .rightJoin(UsersTable as any, on => eq(UsersTable.userID, CustomerTable.userID))
+        .rightJoin(CarTable as any, on => eq(CarTable.carID, ReservationTable.carID));
+}
+
+export const getReservationByUserIdService = async (userId: number) => {
+    return await db.select()
+      .from(ReservationTable)
+      .rightJoin(CustomerTable as any, on => eq(CustomerTable.customerID, ReservationTable.customerID))
+      .rightJoin(UsersTable as any, on => eq(UsersTable.userID, ReservationTable.customerID))
+      .rightJoin(CarTable as any, on => eq(CarTable.carID, ReservationTable.carID))
+      .where(eq(CustomerTable.userID, userId));
+
+};
+
+
 // Get reservation by car ID
 export const getReservationByCarIdService = async (carId: number) => {
     return await db.select()

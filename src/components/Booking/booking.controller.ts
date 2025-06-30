@@ -4,7 +4,7 @@ import {
     getAllBookingsService,
     getBookingByIdService,
     getBookingsByCarIdService,
-    getBookingsByCustomerIdService
+    getBookingsByCustomerIdService, getBookingsByUserIdService
 } from "./booking.service";
 
 // Create booking
@@ -75,6 +75,25 @@ export const getBookingsByCustomerIdController = async (req: Request, res: Respo
         res.status(200)
         .json({
             message: `No bookings were found for customer id ${customerId}`
+        })
+    } catch (error: any) {
+        res.status(500).json({ error: "Failed to get bookings by customer ID", message: error.message });
+    }
+};
+
+    export const getBookingsByUserIdController = async (req: Request, res: Response) => {
+    try {
+        const userId = Number(req.params.userId);
+        const bookings = await getBookingsByUserIdService(userId);
+
+        if(Array.isArray(bookings) && bookings.length > 0){
+            res.status(200).json({ message: `Bookings for customer ID: ${userId}`, data: bookings });
+            return;
+        }
+
+        res.status(200)
+        .json({
+            message: `No bookings were found for customer id ${userId}`
         })
     } catch (error: any) {
         res.status(500).json({ error: "Failed to get bookings by customer ID", message: error.message });

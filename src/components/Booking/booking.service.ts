@@ -65,6 +65,20 @@ export const getBookingsByCustomerIdService = async (customerId: number) => {
         throw new Error(`Failed to get bookings by customer ID: ${error.message}`);
     }
 }
+export const getBookingsByUserIdService = async (userId: number) => {
+    try {
+        const bookings = await db.select()
+            .from(BookingsTable)
+            .leftJoin(CarTable as any, eq(BookingsTable.carID, CarTable.carID))
+            .leftJoin(CustomerTable as any, eq(BookingsTable.customerID, CustomerTable.customerID))
+            .leftJoin(UsersTable as any, eq(UsersTable.userID, CustomerTable.userID))
+            .where(eq(CustomerTable.userID, userId))
+
+            return bookings || [];
+    } catch (error: any) {
+        throw new Error(`Failed to get bookings by customer ID: ${error.message}`);
+    }
+}
 
 // Get all bookings
 export const getAllBookingsService = async () => {

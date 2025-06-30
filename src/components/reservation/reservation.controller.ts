@@ -5,7 +5,8 @@ import {
     getReturnedCarsService,
     getCurrentlyReservedCarsService,
     getCurrentlyReservedCarsByCustomerService,
-    createReservationService,
+    createReservationService, getReservationByUserIdService
+    , getAllReservationsService
 } from "./reservation.service";
 
 export const createReservationController = async (req: Request, res: Response) => {
@@ -29,6 +30,20 @@ export const createReservationController = async (req: Request, res: Response) =
     })
 }
 
+export const getAllReservationsController = async (req: Request, res: Response) => {
+    try {
+        const reservations = await getAllReservationsService();
+
+        if (Array.isArray(reservations) && reservations.length > 0) {
+            res.status(200).json({message: "Reservations for customer", data: reservations})
+        }
+
+        res.status(200).json({message: "Reservations were not found"})
+    }catch (error: any) {
+        res.status(500).json({message: error.message})
+    }
+}
+
 export const getReservationByCustomerIdController = async (req: Request, res: Response) => {
     const customerId = Number(req.params.customerId);
     const data = await getReservationByCustomerIdService(customerId);
@@ -42,6 +57,21 @@ export const getReservationByCustomerIdController = async (req: Request, res: Re
         message: "No reservations for customer was found"
     })
 };
+
+export const getReservationByUserIdController = async (req: Request, res: Response) => {
+    const userId = Number(req.params.userId);
+    const data = await getReservationByUserIdService(userId);
+
+    if(Array.isArray(data) && data.length > 0){
+        res.status(200).json({ message: "Reservations for user", data });
+    }
+
+    res.status(200)
+    .json({
+        message: "No reservations for user was found"
+    })
+};
+
 
 export const getReservationByCarIdController = async (req: Request, res: Response) => {
     const carId = Number(req.params.carId);

@@ -1,5 +1,13 @@
 import { Request, Response } from "express";
-import { createUserService, getUserByEmailService, userLoginService, verifyUserService } from "./authentication.service";
+import {
+    changeRolesService,
+    createUserService,
+    getAllUsersService,
+    getUserByEmailService,
+    getUserByIdService,
+    userLoginService,
+    verifyUserService
+} from "./authentication.service";
 import bycrypt from "bcryptjs";
 import "dotenv/config"
 import jwt from "jsonwebtoken"
@@ -123,8 +131,8 @@ export const loginUserController = async (req: Request, res: Response) => {
             token,
             user: {
                 user_id: userExist.userID,
-                // first_name: userExist.email,
-                // last_name: userExist.email,
+                first_name: userExist.firstName,
+                last_name: userExist.lastName,
                 email: userExist.email,
                 role: userExist.role
             }
@@ -132,5 +140,58 @@ export const loginUserController = async (req: Request, res: Response) => {
     } catch (error: any) {
         return res.status(500).json({ error: error.message });
 
+    }
+}
+
+export const getUserByIdController = async (req: Request, res: Response) => {
+    try {
+        const user = await getUserByIdService(parseInt(req.params.id));
+
+        if(!user) {
+            res.status(404).json({ message: "User not found" });
+            return;
+        }
+
+        res.status(200).json(user)
+        return;
+    }catch(error: any) {
+        res.status(500).json({ error: error.message });
+    }
+}
+
+export const getAllUsersController = async (req: Request, res: Response) => {
+    try{
+        const users = await getAllUsersService()
+
+        if(!users.length) {
+            res.status(404).json({ message: "No users found." });
+        }
+        res.status(200).json(users);
+        return;
+    }catch(error: any) {
+        res.status(500).json({ error: error.message });
+    }
+}
+
+export const changeRolesController = async (req: Request, res: Response) => {
+    try{
+        const { id, role } = req.body;
+
+        console.log(req.body);
+        if (!id || isNaN(Number(id))) {
+            return res.status(400).json({ message: "Invalid user ID" });
+        }
+
+        const userId = Number(id);
+
+
+        const userRole = await changeRolesService(userId, role)
+
+        if(!userRole) {
+            res.status(404).json({ message: "User not found" });
+        }
+        res.status(200).json(userRole);
+    }catch(error: any) {
+        res.status(500).json({ error: error.message });
     }
 }

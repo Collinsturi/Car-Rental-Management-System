@@ -37,10 +37,46 @@ export const userLoginService = async (user: UserEntity) => {
 
     return await db.query.UsersTable.findFirst({
         columns: {
+            firstName: true,
+            lastName: true,
             userID: true,           
             email: true,
             password: true,
             role: true
         }, where: sql`${UsersTable.email} = ${email} `
     })
+}
+
+export const getUserByIdService = async (id: number) => {
+    return await db.query.UsersTable.findFirst({
+        where: eq(UsersTable.userID, id)
+    })
+}
+
+export const getAllUsersService = async () =>{
+    return await db.query.UsersTable.findMany()
+}
+
+export const changeRolesService = async (userId: number, userRole: string) => {
+    const user = await db.query.UsersTable.findFirst({
+        where: eq(UsersTable.userID, userId)
+    });
+
+    if (!user) {
+        return;
+    }
+
+    // Validate the role to only allow specific roles
+    if (userRole !== "admin" && userRole !== "user") {
+        throw new Error("Invalid role provided.");
+    }
+
+    // Perform update
+    const updatedUser = await db
+        .update(UsersTable)
+        .set({ role: userRole })
+        .where(eq(UsersTable.userID, userId))
+        .returning();
+
+    return updatedUser;
 }

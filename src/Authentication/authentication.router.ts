@@ -1,5 +1,11 @@
 import { Express } from "express";
-import { createUserController, loginUserController, verifyUserController } from "./authentication.controller";
+import {
+    changeRolesController,
+    createUserController, getAllUsersController,
+    getUserByIdController,
+    loginUserController,
+    verifyUserController
+} from "./authentication.controller";
 
 const userRoute = (app: Express) => {
     // route
@@ -36,6 +42,34 @@ const userRoute = (app: Express) => {
         }
 
     )
+
+    //Get user details
+    app.route("/auth/user/:id").get(
+        async (req, res, next) => {
+            try{
+                await getUserByIdController(req, res)
+            }catch(error){
+                next()
+            }
+        }
+    )
+
+    //All users
+    app.route("/auth/users").get(
+        async (req, res, next) => {
+            try{
+                await getAllUsersController(req,res)
+            }catch(error){
+                next()
+            }
+        }
+    )
+
+    //change roles
+    app.route("/auth/user/role").put(
+        async(req, res, next) =>{
+            await changeRolesController(req, res)
+        })
 }
 
 export default userRoute;

@@ -4,7 +4,7 @@ import {
     getBookingByIdController,
     getBookingsByCarIdController,
     getBookingsByCustomerIdController,
-    getAllBookingsController
+    getAllBookingsController, getBookingsByUserIdController
 } from "./booking.controller";
 import { bothRoleAuth } from "../../middleware/bearAuth";
 
@@ -22,6 +22,9 @@ const bookingRoute = (app: Express) => {
     app.route("/booking/customer/:customerId").get(
         // bothRoleAuth,
         getBookingsByCustomerIdController); // Get by customer ID
+    app.route("/booking/user/:userId").get(
+        // bothRoleAuth,
+        getBookingsByUserIdController); // Get by user ID
     app.route("/booking").get(
         // bothRoleAuth,
         getAllBookingsController);               // Get all bookings

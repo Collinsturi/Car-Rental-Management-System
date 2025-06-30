@@ -18,7 +18,6 @@
     "spike:location": "k6 run PerformanceTesting/spike/location.get.spike.ts",
     "soak:location": "k6 run PerformanceTesting/soak/location.get.soak.ts",
     "smoke:location": "k6 run PerformanceTesting/smoke/location.get.smoke.ts"
-    
   },
   "keywords": [],
   "author": "",
@@ -41,13 +40,16 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.1",
     "@types/bcryptjs": "^3.0.0",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/nodemailer": "^6.4.17",
     "add": "^2.0.6",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.43.1",
     "express": "^5.1.0",
