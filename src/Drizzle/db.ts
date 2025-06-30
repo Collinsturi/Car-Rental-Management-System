@@ -8,7 +8,7 @@ const sql = neon(process.env.Database_URL!);
 const db = drizzle(sql, { schema, logger: false });
 export default db;
 
-//
+//3
 // export const client = new Client({
 //     connectionString: process.env.Database_URL as string,
 // })
