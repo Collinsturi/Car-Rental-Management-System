@@ -11,7 +11,6 @@
     "migrate": "tsx src/drizzle/migrate.ts",
     "studio": "drizzle-kit studio",
     "push": " drizzle-kit generate && tsx ./src/drizzle/migrate.ts",
-    "test": "jest --detectOpenHandles --watchAll",
     "stress:location": "k6 run PerformanceTesting/stress/location.get.stress.ts",
     "breakpoint:location": "k6 run PerformanceTesting/breakpoint/location.get.breakpoint.ts",
     "load:location": "k6 run PerformanceTesting/load/location.get.load.ts",
@@ -59,3 +58,4 @@
     "postgres": "^3.4.7"
   }
 }
+
