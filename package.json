@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "npm run build && node dist/index.js",
+    "start": "npm run build && node dist/server.js",
     "generate": "drizzle-kit generate",
     "test": "jest --detectOpenHandles --watchAll",
     "migrate": "tsx src/drizzle/migrate.ts",
